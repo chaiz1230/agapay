@@ -1,0 +1,89 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          Role     @default(PATIENT)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  patient       Patient?
+  doctor        Doctor?
+}
+
+model Patient {
+  id             String          @id @default(uuid())
+  userId         String          @unique
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth    DateTime?
+  gender         String?
+  bloodType      String?
+  phone          String?
+  address        String?
+  
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+}
+
+model Doctor {
+  id             String          @id @default(uuid())
+  userId         String          @unique
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialization String
+  licenseNumber  String          @unique
+  bio            String?
+  experienceYears Int
+  consultFee     Decimal         @db.Decimal(10, 2)
+  
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+}
+
+model Appointment {
+  id           String            @id @default(uuid())
+  patientId    String
+  patient      Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId     String
+  doctor       Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dateTime     DateTime
+  status       AppointmentStatus @default(PENDING)
+  notes        String?
+  prescription String?
+  cost         Decimal           @db.Decimal(10, 2)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model MedicalRecord {
+  id         String   @id @default(uuid())
+  patientId  String
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId   String
+  doctor     Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  diagnosis  String
+  treatment  String
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
