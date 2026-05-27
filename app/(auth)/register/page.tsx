@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, User, Eye, EyeOff, ShieldCheck, Users, Stethoscope, FileText, Award, BadgeAlert, Sparkles } from "lucide-react";
 
 import { RegisterSchema, type RegisterInput } from "@/lib/validations/auth";
-import { registerUser } from "@/actions/auth";
+import { registerUser, loginUser } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,11 +61,27 @@ export default function RegisterPage() {
       }
 
       if (response?.success) {
-        setServerSuccess(response.success);
-        // Automatically redirect to login page after 2 seconds
-        setTimeout(() => {
-          router.push("/login");
-        }, 1500);
+        setServerSuccess("Account created successfully! Logging you in...");
+        
+        // Auto-login the user immediately
+        const loginResponse = await loginUser({
+          email: data.email,
+          password: data.password,
+        });
+
+        if (loginResponse?.success) {
+          if (loginResponse.role === "DOCTOR") {
+            router.push("/doctor");
+          } else {
+            router.push("/patient");
+          }
+          router.refresh();
+        } else {
+          // Fallback to login screen if auto-login fails
+          setTimeout(() => {
+            router.push("/login");
+          }, 1000);
+        }
       }
     } catch (error) {
       setServerError("An unexpected error occurred. Please try again.");
