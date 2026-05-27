@@ -36,7 +36,13 @@ export async function bookAppointment(data: {
       },
     });
 
-    return { success: true, appointment };
+    return { 
+      success: true, 
+      appointment: {
+        ...appointment,
+        cost: Number(appointment.cost),
+      } 
+    };
   } catch (error: any) {
     return { error: error.message || "Failed to book appointment" };
   }
@@ -50,7 +56,13 @@ export async function approveAppointment(appointmentId: string) {
         status: AppointmentStatus.CONFIRMED,
       },
     });
-    return { success: true, appointment };
+    return { 
+      success: true, 
+      appointment: {
+        ...appointment,
+        cost: Number(appointment.cost),
+      } 
+    };
   } catch (error: any) {
     return { error: error.message || "Failed to approve appointment" };
   }
@@ -64,7 +76,13 @@ export async function cancelAppointment(appointmentId: string) {
         status: AppointmentStatus.CANCELLED,
       },
     });
-    return { success: true, appointment };
+    return { 
+      success: true, 
+      appointment: {
+        ...appointment,
+        cost: Number(appointment.cost),
+      } 
+    };
   } catch (error: any) {
     return { error: error.message || "Failed to cancel appointment" };
   }
@@ -79,7 +97,13 @@ export async function rescheduleAppointment(appointmentId: string, newDateTime: 
         status: AppointmentStatus.PENDING,
       },
     });
-    return { success: true, appointment };
+    return { 
+      success: true, 
+      appointment: {
+        ...appointment,
+        cost: Number(appointment.cost),
+      } 
+    };
   } catch (error: any) {
     return { error: error.message || "Failed to reschedule appointment" };
   }
@@ -115,7 +139,14 @@ export async function finalizeConsultation(data: {
       return { appointment, record };
     });
 
-    return { success: true, ...result };
+    return { 
+      success: true, 
+      appointment: {
+        ...result.appointment,
+        cost: Number(result.appointment.cost),
+      },
+      record: result.record
+    };
   } catch (error: any) {
     return { error: error.message || "Failed to finalize consultation" };
   }

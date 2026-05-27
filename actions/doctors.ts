@@ -139,7 +139,13 @@ export async function updateDoctorProfile(userId: string, data: { specialization
         consultFee: data.consultFee,
       },
     });
-    return { success: true, doctor };
+    return { 
+      success: true, 
+      doctor: {
+        ...doctor,
+        consultFee: Number(doctor.consultFee),
+      } 
+    };
   } catch (error: any) {
     return { error: error.message || "Failed to update profile" };
   }
