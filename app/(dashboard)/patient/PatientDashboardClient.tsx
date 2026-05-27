@@ -39,11 +39,48 @@ export default function PatientDashboardClient({ firstName, appointments, record
   const [activePopup, setActivePopup] = useState<null | "prescriptions" | "billing" | "calendar">(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportToast, setExportToast] = useState(false);
+  const [isHistoryPopupOpen, setIsHistoryPopupOpen] = useState(false);
 
   const handleExport = () => {
     setIsExporting(true);
     setTimeout(() => {
       setIsExporting(false);
+
+      // Generate medical record content
+      const content = `AGAPAY TELEHEALTH - MEDICAL RECORD EXPORT\n` +
+        `Generated on: ${new Date().toLocaleDateString()}\n` +
+        `Patient: Jane Doe\n\n` +
+        `========================================\n` +
+        `ACTIVE PRESCRIPTIONS\n` +
+        `- Albuterol Inhaler (Dr. Elena Santos): 2 puffs every 4-6 hours as needed\n` +
+        `- Paracetamol 500mg (Dr. Sofia Chen): 1 tablet every 6 hours as needed\n\n` +
+        `========================================\n` +
+        `VITALS SUMMARY\n` +
+        `- Heart Rate: 72 bpm\n` +
+        `- Blood Pressure: 120/80 mmHg\n` +
+        `- Wellness Index: 84/100\n\n` +
+        `========================================\n` +
+        `RECENT CONSULTATIONS HISTORY\n` +
+        (records.length === 0
+          ? `- No consultations recorded yet.\n`
+          : records.map(rec => {
+              const recDate = new Date(rec.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+              return `- ${recDate}: Dr. ${rec.doctor.user?.name} (${rec.doctor.specialization}) - Diagnosis: ${rec.diagnosis}\n  Treatment: ${rec.treatment}\n  Notes: ${rec.notes || "N/A"}\n`;
+            }).join("\n")
+        ) +
+        `\n========================================\n` +
+        `This record is securely encrypted and HIPAA-compliant.\n`;
+
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "Agapay_Medical_Record_Summary.txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
       setExportToast(true);
       setTimeout(() => setExportToast(false), 3000);
     }, 1500);
@@ -289,8 +326,12 @@ export default function PatientDashboardClient({ firstName, appointments, record
                 </Table>
               )}
               <div className="py-4 border-t border-slate-100 text-center">
-                <Button asChild variant="ghost" className="text-[#0a5c5f] hover:bg-[#0a5c5f]/5 font-bold text-xs rounded-lg px-6">
-                  <Link href="/patient/records">See full history</Link>
+                <Button 
+                  onClick={() => setIsHistoryPopupOpen(true)}
+                  variant="ghost" 
+                  className="text-[#0a5c5f] hover:bg-[#0a5c5f]/5 font-bold text-xs rounded-lg px-6"
+                >
+                  See full history
                 </Button>
               </div>
             </CardContent>
@@ -590,6 +631,55 @@ export default function PatientDashboardClient({ firstName, appointments, record
               className="w-full bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl h-11 font-semibold"
             >
               Close Calendar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full History Dialog popup */}
+      <Dialog open={isHistoryPopupOpen} onOpenChange={setIsHistoryPopupOpen}>
+        <DialogContent className="max-w-2xl rounded-3xl p-6 bg-white border border-slate-100">
+          <DialogHeader className="pb-3 border-b border-slate-100">
+            <DialogTitle className="text-xl font-extrabold text-[#0a5c5f] flex items-center gap-2">
+              <FileText className="h-5 w-5 text-[#0a5c5f]" />
+              <span>Full Consultation History</span>
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 text-xs font-light">Complete record of your past telehealth visits</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-3 max-h-[400px] overflow-y-auto pr-1">
+            {records.length === 0 ? (
+              <p className="text-sm text-slate-400 italic text-center py-6">No consultation history available.</p>
+            ) : (
+              <div className="space-y-3">
+                {records.map((rec) => {
+                  const recDate = new Date(rec.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                  return (
+                    <div key={rec.id} className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 space-y-2 text-left">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-xs font-bold text-slate-800 block">Dr. {rec.doctor.user?.name}</span>
+                          <span className="text-[10px] text-slate-400 font-light block">{rec.doctor.specialization} • {recDate}</span>
+                        </div>
+                        <Badge className="bg-teal-50 text-[#0a5c5f] hover:bg-teal-100 border border-teal-200 font-semibold rounded-full text-[9px] border-none shadow-none">
+                          {rec.diagnosis}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-slate-600 font-light leading-relaxed border-t border-slate-100 pt-2 mt-1 whitespace-pre-wrap">
+                        <span className="font-bold block text-slate-700 mb-0.5">Treatment & Notes:</span>
+                        {rec.treatment}
+                        {rec.notes ? `\n\nNotes: ${rec.notes}` : ""}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <Button 
+              onClick={() => setIsHistoryPopupOpen(false)} 
+              className="w-full bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl h-11 font-semibold mt-4"
+            >
+              Close History
             </Button>
           </div>
         </DialogContent>

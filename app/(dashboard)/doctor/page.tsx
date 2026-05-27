@@ -52,7 +52,7 @@ export default async function DoctorDashboard() {
   });
 
   if (!doctor) {
-    redirect("/login");
+    redirect("/api/auth/clear-stale-session");
   }
 
   // Fetch today's queue (CONFIRMED or COMPLETED appointments)

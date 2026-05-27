@@ -13,10 +13,25 @@ export default async function PatientDashboard() {
 
   const firstName = session.user.name ? session.user.name.split(" ")[0] : "Patient";
 
-  // Fetch patient profile
-  const patient = await prisma.patient.findUnique({
+  // Verify user exists in DB first to handle stale/wiped sessions gracefully
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id }
+  });
+
+  if (!dbUser) {
+    redirect("/api/auth/clear-stale-session");
+  }
+
+  // Fetch patient profile (automatically create on-the-fly if missing to ensure navigability)
+  let patient = await prisma.patient.findUnique({
     where: { userId: session.user.id }
   });
+
+  if (!patient) {
+    patient = await prisma.patient.create({
+      data: { userId: session.user.id }
+    });
+  }
 
   // Fetch upcoming appointments
   const dbAppointments = patient ? await prisma.appointment.findMany({

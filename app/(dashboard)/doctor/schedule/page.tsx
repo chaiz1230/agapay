@@ -18,7 +18,7 @@ export default async function DoctorSchedulePage() {
   });
 
   if (!doctor) {
-    redirect("/login");
+    redirect("/api/auth/clear-stale-session");
   }
 
   const plainDoctor = {

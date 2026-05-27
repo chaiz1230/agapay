@@ -159,21 +159,19 @@ export default function AiRecommendationPage() {
             <div className="p-2.5 bg-white text-[#0a5c5f] border border-teal-200/50 rounded-xl shrink-0">
               <Stethoscope className="h-6 w-6" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-extrabold text-[#0a5c5f]">Symptom Diagnostic Suggestion</h3>
-              <p className="text-sm font-bold text-slate-900 leading-relaxed">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">Symptom Diagnostic Suggestion</h3>
+              <p className="text-sm font-semibold text-slate-800 mt-1 leading-relaxed">
                 Based on your symptom details, we recommend scheduling a consultation with a:
               </p>
-              <div className="pt-1.5">
-                <Badge className="bg-gradient-to-r from-[#0a5c5f] to-teal-700 text-white font-extrabold text-base px-4 py-2 rounded-xl border-none shadow-sm">
-                  {result.specialization}
-                </Badge>
-              </div>
+              <Badge className="bg-[#0a5c5f] text-white hover:bg-[#0a5c5f] font-extrabold text-xs px-3.5 py-1.5 rounded-full mt-2.5 border-none shadow-sm">
+                {result.specialization}
+              </Badge>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">Recommended Specialist Partners</h3>
+          <div className="space-y-3">
+            <h3 className="text-base font-extrabold text-slate-900">Recommended Specialist Partners</h3>
             
             {result.doctors.length === 0 ? (
               <p className="text-sm text-slate-500 italic bg-white border border-slate-100 p-6 rounded-2xl text-center">
@@ -185,40 +183,42 @@ export default function AiRecommendationPage() {
                   const docImage = getDoctorImage(doctor.user?.name || "");
                   
                   return (
-                    <Card key={doctor.id} className="border-slate-100 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow p-3 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <Card key={doctor.id} className="border-slate-100 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all p-4 flex flex-col justify-start">
+                      <div className="flex items-center gap-3.5">
                         <img
                           src={docImage}
                           alt={doctor.user?.name}
                           className="h-12 w-12 rounded-xl object-cover border border-slate-100 shadow-sm shrink-0"
                         />
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <h4 className="font-extrabold text-slate-800 text-sm truncate">Dr. {doctor.user?.name}</h4>
-                          <p className="text-[10px] text-[#0a5c5f] font-semibold mt-0.5">{doctor.specialization} Specialist</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs font-bold text-slate-700">₱{Number(doctor.consultFee).toLocaleString()}</span>
-                            <span className="text-slate-300 text-[10px] font-light">•</span>
-                            <div className="flex items-center gap-0.5 text-amber-500 text-[10px] font-bold">
-                              <Star className="h-3 w-3 fill-current" />
-                              <span>4.9</span>
-                            </div>
+                          <p className="text-[10px] text-slate-500 font-semibold">{doctor.specialization} Specialist</p>
+                          <div className="flex items-center gap-1 text-amber-500 text-[10px] font-bold mt-0.5">
+                            <Star className="h-3 w-3 fill-current" />
+                            <span>4.9</span>
                           </div>
                         </div>
                       </div>
 
-                      <Button
-                        onClick={() => {
-                          setSelectedDoctor(doctor);
-                          setBookingTime("");
-                          setBookingError(null);
-                          setBookingSuccess(null);
-                        }}
-                        size="sm"
-                        className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl px-4 h-9 flex items-center gap-1 text-xs font-semibold shrink-0"
-                      >
-                        <span>Book</span>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-2.5 text-xs text-slate-500">
+                        <div className="flex items-center gap-1 font-bold text-[#0a5c5f]">
+                          <Coins className="h-3.5 w-3.5" />
+                          <span>₱{Number(doctor.consultFee).toLocaleString()}</span>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setSelectedDoctor(doctor);
+                            setBookingTime("");
+                            setBookingError(null);
+                            setBookingSuccess(null);
+                          }}
+                          size="sm"
+                          className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl px-4 h-8 flex items-center gap-1 text-xs font-semibold"
+                        >
+                          <span>Book Now</span>
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </Card>
                   );
                 })}
