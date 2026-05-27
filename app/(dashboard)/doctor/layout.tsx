@@ -14,28 +14,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-interface SidebarLinkProps {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive?: boolean;
-}
-
-function SidebarLink({ href, icon, label, isActive }: SidebarLinkProps) {
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-        isActive
-          ? "bg-[#0a5c5f]/5 text-[#0a5c5f] font-semibold border-l-4 border-[#0a5c5f]"
-          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-      }`}
-    >
-      {icon}
-      <span className="text-sm">{label}</span>
-    </Link>
-  );
-}
+import SidebarNav from "@/components/SidebarNav";
 
 export default async function DoctorLayout({
   children,
@@ -57,6 +36,29 @@ export default async function DoctorLayout({
         .toUpperCase()
     : "D";
 
+  const navItems = [
+    {
+      href: "/doctor",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      label: "Dashboard",
+    },
+    {
+      href: "/doctor/appointments",
+      icon: <Calendar className="h-5 w-5" />,
+      label: "Appointments",
+    },
+    {
+      href: "/doctor/schedule",
+      icon: <Clock className="h-5 w-5" />,
+      label: "Schedule",
+    },
+    {
+      href: "/doctor/records",
+      icon: <FileText className="h-5 w-5" />,
+      label: "Medical Records",
+    },
+  ];
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar - Desktop */}
@@ -71,29 +73,7 @@ export default async function DoctorLayout({
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex flex-col gap-1">
-            <SidebarLink 
-              href="/doctor" 
-              icon={<LayoutDashboard className="h-5 w-5" />} 
-              label="Dashboard" 
-              isActive={true}
-            />
-            <SidebarLink 
-              href="/doctor/appointments" 
-              icon={<Calendar className="h-5 w-5" />} 
-              label="Appointments" 
-            />
-            <SidebarLink 
-              href="/doctor/schedule" 
-              icon={<Clock className="h-5 w-5" />} 
-              label="Schedule" 
-            />
-            <SidebarLink 
-              href="/doctor/records" 
-              icon={<FileText className="h-5 w-5" />} 
-              label="Medical Records" 
-            />
-          </nav>
+          <SidebarNav items={navItems} />
         </div>
 
         {/* Bottom Profile and Sign Out */}

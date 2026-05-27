@@ -13,7 +13,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface DoctorCardProps {
   name: string;
@@ -23,10 +23,20 @@ interface DoctorCardProps {
   reviews: string;
 }
 
+const getDoctorImage = (name: string) => {
+  const lowercaseName = name.toLowerCase();
+  if (lowercaseName.includes("santos")) return "/dr_elena_santos.png";
+  if (lowercaseName.includes("chen")) return "/dr_sofia_chen.png";
+  if (lowercaseName.includes("rivera")) return "/dr_marco_rivera.png";
+  return "/dr_julian_reyes.png";
+};
+
 function DoctorCard({ name, specialization, experience, rating, reviews }: DoctorCardProps) {
+  const imageUrl = getDoctorImage(name);
   return (
     <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center">
-      <Avatar className="h-24 w-24 border border-slate-100 mb-4 bg-teal-50 text-[#0a5c5f] flex items-center justify-center font-bold text-xl">
+      <Avatar className="h-24 w-24 border border-slate-100 mb-4 bg-teal-50 text-[#0a5c5f] flex items-center justify-center font-bold text-xl overflow-hidden relative">
+        <AvatarImage src={imageUrl} alt={name} className="object-cover w-full h-full object-center" />
         <AvatarFallback>{name.split(" ").slice(-1)[0][0]}</AvatarFallback>
       </Avatar>
       <h3 className="font-bold text-slate-800 text-lg">{name}</h3>
@@ -101,11 +111,8 @@ export default async function HomePage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-semibold text-[#0a5c5f] hover:underline px-3 py-2">
-              Sign In
-            </Link>
-            <Button asChild className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl px-5 h-10 font-medium">
-              <Link href="/register">Join as Provider</Link>
+            <Button asChild className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl px-6 h-10 font-semibold shadow-sm transition-all">
+              <Link href="/login">Sign In</Link>
             </Button>
           </div>
         </div>

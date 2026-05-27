@@ -11,33 +11,13 @@ import {
   Settings, 
   LogOut, 
   User,
-  HeartPulse
+  HeartPulse,
+  BrainCircuit
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-interface SidebarLinkProps {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive?: boolean;
-}
-
-function SidebarLink({ href, icon, label, isActive }: SidebarLinkProps) {
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-        isActive
-          ? "bg-[#0a5c5f]/5 text-[#0a5c5f] font-semibold border-l-4 border-[#0a5c5f]"
-          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-      }`}
-    >
-      {icon}
-      <span className="text-sm">{label}</span>
-    </Link>
-  );
-}
+import SidebarNav from "@/components/SidebarNav";
 
 export default async function PatientLayout({
   children,
@@ -60,6 +40,34 @@ export default async function PatientLayout({
         .toUpperCase()
     : "P";
 
+  const navItems = [
+    {
+      href: "/patient",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      label: "Dashboard",
+    },
+    {
+      href: "/patient/appointments",
+      icon: <Calendar className="h-5 w-5" />,
+      label: "Appointments",
+    },
+    {
+      href: "/patient/records",
+      icon: <FileText className="h-5 w-5" />,
+      label: "Records",
+    },
+    {
+      href: "/patient/doctors",
+      icon: <User className="h-5 w-5" />,
+      label: "Doctors",
+    },
+    {
+      href: "/patient/ai-recommend",
+      icon: <BrainCircuit className="h-5 w-5" />,
+      label: "AI Assistant",
+    },
+  ];
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar - Desktop */}
@@ -74,39 +82,7 @@ export default async function PatientLayout({
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex flex-col gap-1">
-            <SidebarLink 
-              href="/patient" 
-              icon={<LayoutDashboard className="h-5 w-5" />} 
-              label="Dashboard" 
-              isActive={true} // Hardcoded for index path, but can be updated dynamically
-            />
-            <SidebarLink 
-              href="/patient/appointments" 
-              icon={<Calendar className="h-5 w-5" />} 
-              label="Appointments" 
-            />
-            <SidebarLink 
-              href="/patient/records" 
-              icon={<FileText className="h-5 w-5" />} 
-              label="Records" 
-            />
-            <SidebarLink 
-              href="/patient/doctors" 
-              icon={<User className="h-5 w-5" />} 
-              label="Doctors" 
-            />
-            <SidebarLink 
-              href="#" 
-              icon={<MessageSquare className="h-5 w-5" />} 
-              label="Messages" 
-            />
-            <SidebarLink 
-              href="#" 
-              icon={<Pill className="h-5 w-5" />} 
-              label="Prescriptions" 
-            />
-          </nav>
+          <SidebarNav items={navItems} />
         </div>
 
         {/* Bottom Profile and Sign Out */}
