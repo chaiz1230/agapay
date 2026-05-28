@@ -266,7 +266,7 @@ export default function PatientDashboardClient({ firstName, appointments, record
                         </Badge>
                         {appt.status === "CONFIRMED" && (
                           <Button asChild size="sm" className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white flex items-center gap-1.5 rounded-lg h-9 px-4">
-                            <Link href={`/patient/consultation/${appt.id}`}>Join Call</Link>
+                            <a href={meetUrl} target="_blank" rel="noopener noreferrer">Join Call</a>
                           </Button>
                         )}
                       </div>

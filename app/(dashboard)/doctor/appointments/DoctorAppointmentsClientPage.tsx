@@ -14,32 +14,29 @@ import {
   CalendarDays,
   User,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Search,
+  SlidersHorizontal,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { cancelAppointment, rescheduleAppointment } from "@/actions/appointments";
+import { Avatar } from "@/components/ui/avatar";
+import { approveAppointment, rescheduleAppointment } from "@/actions/appointments";
 
-interface PatientAppointmentsClientPageProps {
+interface DoctorAppointmentsClientPageProps {
   appointments: any[];
-  patientId: string;
+  doctorId: string;
 }
 
-const getDoctorImage = (name: string) => {
-  const lowercaseName = name.toLowerCase();
-  if (lowercaseName.includes("santos")) return "/dr_elena_santos.png";
-  if (lowercaseName.includes("chen")) return "/dr_sofia_chen.png";
-  if (lowercaseName.includes("rivera")) return "/dr_marco_rivera.png";
-  return "/dr_julian_reyes.png";
-};
-
-export default function PatientAppointmentsClientPage({ appointments, patientId }: PatientAppointmentsClientPageProps) {
+export default function DoctorAppointmentsClientPage({ appointments, doctorId }: DoctorAppointmentsClientPageProps) {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Reschedule state
   const [rescheduleTarget, setRescheduleTarget] = useState<any | null>(null);
@@ -57,6 +54,11 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
 
   // Filters mapping
   const filteredAppointments = appointments.filter((appt) => {
+    const matchesSearch = appt.patient?.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (appt.notes && appt.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+                          
+    if (!matchesSearch) return false;
+
     if (activeFilter === "All") return true;
     if (activeFilter === "Pending") return appt.status === "PENDING";
     if (activeFilter === "Confirmed") return appt.status === "CONFIRMED";
@@ -65,19 +67,17 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
     return true;
   });
 
-  const handleCancel = async (appointmentId: string) => {
-    if (!confirm("Are you sure you want to cancel this consultation appointment?")) return;
-
+  const handleApprove = async (appointmentId: string) => {
     setIsLoading(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const result = await cancelAppointment(appointmentId);
+    const result = await approveAppointment(appointmentId);
 
     if (result.error) {
       setErrorMessage(result.error);
     } else {
-      setSuccessMessage("Appointment cancelled successfully.");
+      setSuccessMessage("Appointment approved successfully.");
       router.refresh();
     }
     setIsLoading(false);
@@ -107,27 +107,33 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
     if (result.error) {
       setErrorMessage(result.error);
     } else {
-      setSuccessMessage("Reschedule request submitted successfully! Awaiting doctor approval.");
+      setSuccessMessage("Reschedule request submitted successfully!");
       setRescheduleTarget(null);
       router.refresh();
     }
     setIsLoading(false);
   };
 
+  const getAge = (dobString: string) => {
+    if (!dobString) return "N/A";
+    const today = new Date();
+    const birthDate = new Date(dobString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto font-sans">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Your Consultations</h1>
-          <p className="text-slate-500 font-light mt-1">Manage your active bookings, view schedule details, or cancel appointments</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Consultation Appointments</h1>
+          <p className="text-slate-500 font-light mt-1">Review scheduled calls, approve new requests, and update bookings</p>
         </div>
-        <Button asChild className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white flex items-center gap-2 rounded-xl h-11">
-          <Link href="/patient/doctors">
-            <Calendar className="h-4 w-4" />
-            <span>Book New Appointment</span>
-          </Link>
-        </Button>
       </div>
 
       {/* Floating Status Notification Toast */}
@@ -150,6 +156,18 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
         </div>
       )}
 
+      {/* Search Input */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+        <Input
+          type="text"
+          placeholder="Search by patient name or symptom note..."
+          className="pl-10 h-11 border-slate-200 focus:border-[#0a5c5f] focus:ring-[#0a5c5f]/10 rounded-xl"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       {/* Tab Filter Navigation */}
       <div className="flex gap-2 overflow-x-auto pb-2 border-b border-slate-200">
         {["All", "Pending", "Confirmed", "Completed", "Cancelled"].map((filter) => (
@@ -162,14 +180,14 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            {filter === "All" ? "All Bookings" : filter}
+            {filter === "All" ? "All Appointments" : filter}
           </button>
         ))}
       </div>
 
-      {/* Appointments List Layout */}
+      {/* Appointments List */}
       {filteredAppointments.length === 0 ? (
-        <div className="text-center py-16 bg-white border border-slate-100 rounded-3xl space-y-4">
+        <div className="text-center py-16 bg-white border border-slate-100 rounded-3xl space-y-4 shadow-sm">
           <div className="p-4 bg-slate-50 rounded-full inline-block text-slate-400">
             <Calendar className="h-8 w-8" />
           </div>
@@ -186,7 +204,6 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
               weekday: "long", month: "short", day: "numeric", year: "numeric" 
             });
             const timeStr = apptDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-            const docImage = getDoctorImage(appt.doctor.user?.name || "");
 
             // Deterministic Google Meet URL
             const cleanId = appt.id.replace(/[^a-z]/g, "");
@@ -202,17 +219,17 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
             return (
               <Card key={appt.id} className="border-slate-100 shadow-sm rounded-2xl bg-white overflow-hidden hover:shadow-md transition-shadow flex flex-col justify-between">
                 <div className="p-5 space-y-4">
-                  {/* Doctor Profile info */}
+                  {/* Patient Info */}
                   <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3.5">
-                      <img 
-                        src={docImage} 
-                        alt={appt.doctor.user?.name}
-                        className="h-12 w-12 rounded-xl object-cover border border-slate-100 shadow-sm"
-                      />
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-slate-100 bg-[#0a5c5f]/5 text-[#0a5c5f] flex items-center justify-center font-bold text-sm">
+                        <span>{appt.patient?.user?.name ? appt.patient.user.name[0] : "P"}</span>
+                      </Avatar>
                       <div>
-                        <h4 className="font-extrabold text-slate-800 text-sm">Dr. {appt.doctor.user?.name}</h4>
-                        <p className="text-[11px] text-slate-500 font-semibold">{appt.doctor.specialization} Specialist</p>
+                        <h4 className="font-extrabold text-slate-800 text-sm">{appt.patient?.user?.name}</h4>
+                        <p className="text-[11px] text-slate-500 font-semibold">
+                          {appt.patient ? `${getAge(appt.patient.dateOfBirth)} Yrs • ${appt.patient.gender}` : "Patient"}
+                        </p>
                       </div>
                     </div>
                     <Badge className={`font-semibold px-2.5 py-0.5 rounded-full border-none uppercase text-[9px] ${
@@ -251,7 +268,7 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                   {/* Google Meet link details */}
                   {(isConfirmed || isPending) && (
                     <div className="p-3 bg-teal-50/30 border border-teal-200/40 rounded-xl space-y-1.5">
-                      <span className="text-[9px] font-bold text-slate-400 block uppercase">Google Meet Session Link</span>
+                      <span className="text-[9px] font-bold text-slate-400 block uppercase">Google Meet Link</span>
                       <a 
                         href={meetUrl} 
                         target="_blank" 
@@ -267,8 +284,16 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
 
                 {/* Footer Buttons Actions */}
                 <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex gap-2">
-                  {(isPending || isConfirmed) && (
+                  {isPending && (
                     <>
+                      <Button 
+                        size="sm" 
+                        disabled={isLoading}
+                        onClick={() => handleApprove(appt.id)}
+                        className="flex-1 bg-[#0a5c5f] hover:bg-[#084a4c] text-white text-xs rounded-xl h-10 font-bold"
+                      >
+                        Approve
+                      </Button>
                       <Button 
                         size="sm" 
                         variant="outline" 
@@ -281,26 +306,25 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                       >
                         Reschedule
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        disabled={isLoading}
-                        onClick={() => handleCancel(appt.id)}
-                        className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </>
                   )}
                   {isConfirmed && (
-                    <Button asChild size="sm" className="flex-1 bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl h-10 font-bold text-xs">
-                      <a href={meetUrl} target="_blank" rel="noopener noreferrer">Join Call Room</a>
-                    </Button>
+                    <>
+                      <Button asChild size="sm" className="flex-1 bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl h-10 font-bold text-xs">
+                        <Link href={`/doctor/consultation/${appt.id}`}>Start Consultation EHR</Link>
+                      </Button>
+                      <Button asChild variant="outline" size="sm" className="flex-1 rounded-xl h-10 border-slate-200 text-slate-600 text-xs font-semibold bg-white hover:bg-slate-50">
+                        <a href={meetUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          <span>Launch Meet</span>
+                        </a>
+                      </Button>
+                    </>
                   )}
                   {isCompleted && (
                     <Button asChild size="sm" className="flex-1 bg-[#0a5c5f]/10 text-[#0a5c5f] hover:bg-[#0a5c5f]/20 font-bold text-xs h-10 rounded-xl border-none shadow-none">
-                      <Link href="/patient/records" className="flex items-center justify-center gap-1">
-                        <span>View EHR Record</span>
+                      <Link href="/doctor/records" className="flex items-center justify-center gap-1">
+                        <span>View Saved Record</span>
                         <ChevronRight className="h-4 w-4" />
                       </Link>
                     </Button>
@@ -318,7 +342,7 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
           <DialogContent className="max-w-md rounded-3xl p-6 bg-white border border-slate-100">
             <DialogHeader className="pb-3 border-b border-slate-100">
               <DialogTitle className="text-xl font-extrabold text-slate-900">Reschedule Consultation</DialogTitle>
-              <DialogDescription className="text-slate-500 text-xs font-light">Propose a new date and timeslot for your visit</DialogDescription>
+              <DialogDescription className="text-slate-500 text-xs font-light">Propose a new date and timeslot for the patient</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-5 pt-3">
@@ -368,9 +392,10 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                 </Button>
                 <Button 
                   onClick={handleRescheduleSubmit}
+                  disabled={isLoading}
                   className="flex-1 bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl h-11 font-semibold"
                 >
-                  Request Reschedule
+                  {isLoading ? "Saving..." : "Reschedule Appointment"}
                 </Button>
               </div>
             </div>

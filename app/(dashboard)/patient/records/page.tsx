@@ -46,21 +46,44 @@ export default async function PatientRecordsPage() {
     orderBy: { createdAt: "desc" }
   });
 
-  // Map to plain objects (to avoid Decimal boundary leaks)
-  const plainRecords = dbRecords.map((r) => ({
-    id: r.id,
-    diagnosis: r.diagnosis,
-    treatment: r.treatment,
-    notes: r.notes || "",
-    createdAt: r.createdAt.toISOString(),
-    doctor: {
-      id: r.doctor.id,
-      specialization: r.doctor.specialization,
-      user: {
-        name: r.doctor.user.name
-      }
+  // Fetch completed appointments to retrieve prescription
+  const completedAppointments = await prisma.appointment.findMany({
+    where: { 
+      patientId: patient.id,
+      status: "COMPLETED"
+    },
+    select: {
+      dateTime: true,
+      prescription: true,
+      doctorId: true
     }
-  }));
+  });
+
+  // Map to plain objects (to avoid Decimal boundary leaks) and link prescriptions
+  const plainRecords = dbRecords.map((r) => {
+    const matchingAppt = completedAppointments.find((appt) => {
+      const isSameDoctor = appt.doctorId === r.doctorId;
+      const timeDiff = Math.abs(new Date(appt.dateTime).getTime() - new Date(r.createdAt).getTime());
+      const isCloseInTime = timeDiff < 24 * 60 * 60 * 1000;
+      return isSameDoctor && isCloseInTime;
+    });
+
+    return {
+      id: r.id,
+      diagnosis: r.diagnosis,
+      treatment: r.treatment,
+      notes: r.notes || "",
+      prescription: matchingAppt?.prescription || "",
+      createdAt: r.createdAt.toISOString(),
+      doctor: {
+        id: r.doctor.id,
+        specialization: r.doctor.specialization,
+        user: {
+          name: r.doctor.user.name
+        }
+      }
+    };
+  });
 
   return <PatientRecordsClientPage initialRecords={plainRecords} patientId={patient.id} />;
 }

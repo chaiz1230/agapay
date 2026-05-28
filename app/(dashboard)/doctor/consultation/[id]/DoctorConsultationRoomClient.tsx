@@ -4,10 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Video, 
-  Mic, 
-  MicOff, 
-  VideoOff, 
-  PhoneOff, 
   Activity, 
   Heart, 
   ShieldCheck, 
@@ -18,7 +14,8 @@ import {
   Pill,
   Loader2,
   Stethoscope,
-  ChevronRight
+  ExternalLink,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,12 +31,6 @@ interface DoctorConsultationRoomClientProps {
 export default function DoctorConsultationRoomClient({ appointment }: DoctorConsultationRoomClientProps) {
   const router = useRouter();
 
-  // Call states
-  const [isMuted, setIsMuted] = useState(false);
-  const [isCamOff, setIsCamOff] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [pulseRate, setPulseRate] = useState(74);
-
   // Consultation form states
   const [diagnosis, setDiagnosis] = useState("");
   const [treatment, setTreatment] = useState("");
@@ -51,35 +42,12 @@ export default function DoctorConsultationRoomClient({ appointment }: DoctorCons
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Timer simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsedTime((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fluctuating patient pulse rate simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPulseRate((prev) => {
-        const diff = Math.floor(Math.random() * 5) - 2;
-        const next = prev + diff;
-        return next > 65 && next < 85 ? next : prev;
-      });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const handleHangUp = () => {
-    router.push("/doctor");
-  };
+  // Deterministic Google Meet URL
+  const cleanId = appointment.id.replace(/[^a-z]/g, "");
+  const p1 = (cleanId.substring(0, 3) || "aga").padEnd(3, "a");
+  const p2 = (cleanId.substring(3, 7) || "meet").padEnd(4, "m");
+  const p3 = (cleanId.substring(7, 10) || "pay").padEnd(3, "p");
+  const meetUrl = `https://meet.google.com/${p1}-${p2}-${p3}`;
 
   // Submit final EHR report
   const handleFinalize = async (e: React.FormEvent) => {
@@ -127,136 +95,132 @@ export default function DoctorConsultationRoomClient({ appointment }: DoctorCons
   };
 
   return (
-    <div className="flex h-screen bg-slate-900 text-white overflow-hidden flex-col md:flex-row">
-      {/* Left Area: Main Video Room (2/3 width) */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden p-6 justify-between">
+    <div className="flex h-screen bg-slate-950 text-white overflow-hidden flex-col md:flex-row font-sans">
+      {/* Left Area: Patient Vitals & Google Meet Launcher (2/3 width) */}
+      <div className="flex-1 flex flex-col h-full overflow-y-auto p-6 md:p-8 space-y-6">
         
-        {/* Top Header Session Bar */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-4 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/20">
-              <Video className="h-5 w-5 animate-pulse" />
+            <div className="h-10 w-10 bg-teal-500/10 text-teal-400 rounded-xl flex items-center justify-center border border-teal-500/20">
+              <Stethoscope className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-base font-bold">Consultation with {appointment.patient?.user?.name || "Patient"}</h1>
-              <p className="text-[10px] text-slate-400 font-medium">Ongoing Call • Elapsed Time: ({formatTime(elapsedTime)})</p>
+              <h1 className="text-lg font-bold text-slate-100">Consultation Session</h1>
+              <p className="text-xs text-slate-400 font-medium">Patient: {appointment.patient?.user?.name || "Patient"}</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[9px] px-2.5 py-1">
-              Encrypted Stream
-            </Badge>
-            <Button variant="outline" size="sm" className="bg-white/5 border-white/10 hover:bg-white/10 text-xs rounded-xl flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>Patient File</span>
-            </Button>
-          </div>
+          <Badge className="bg-teal-500/10 text-teal-400 border border-teal-500/20 font-bold text-[10px] px-2.5 py-1">
+            HIPAA Compliant Room
+          </Badge>
         </div>
 
-        {/* Video Canvas Container (Reference Image 7 style) */}
-        <div className="flex-1 relative my-6 bg-slate-950 rounded-3xl overflow-hidden border border-white/5 shadow-2xl flex items-center justify-center">
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Main Video: Simulated Patient Stream */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center space-y-4">
-            {/* Simulated Patient Video Feed avatar placeholder */}
-            <div className="h-28 w-28 bg-[#0a5c5f]/10 border border-[#0a5c5f]/30 rounded-full flex items-center justify-center text-[#0a5c5f] relative shadow-lg">
-              <Users className="h-14 w-14" />
-              <div className="absolute right-1 bottom-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-slate-950 animate-pulse" />
-            </div>
-            <div className="text-center space-y-1">
-              <h4 className="font-extrabold text-slate-200 text-sm">{appointment.patient?.user?.name || "Patient"}</h4>
-              <p className="text-[10px] text-slate-400">Streaming Video • Patient Feed Connected</p>
-            </div>
-
-            {/* Rec Badge */}
-            <div className="absolute left-6 top-6 bg-rose-600 text-white text-[9px] font-extrabold tracking-wider uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
-              <div className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
-              <span>REC • LIVE</span>
-            </div>
-          </div>
-
-          {/* Self Video: Doctor Inset Pip */}
-          <div className="absolute right-6 bottom-6 h-28 w-20 md:h-36 md:w-28 rounded-2xl overflow-hidden border-2 border-white/10 shadow-lg bg-slate-800">
-            {isCamOff ? (
-              <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-500">
-                <VideoOff className="h-6 w-6" />
-              </div>
-            ) : (
-              <div className="relative w-full h-full bg-slate-950">
-                <img 
-                  src="/dr_elena_santos.png" 
-                  alt="Dr. Elena Santos"
-                  className="w-full h-full object-cover object-center opacity-80"
-                />
-                <div className="absolute bottom-2 left-2 bg-slate-900/60 text-white text-[8px] px-1 py-0.5 rounded font-mono">
-                  You (Doctor)
+          {/* Google Meet Launcher Card */}
+          <Card className="bg-slate-900 border-white/5 rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
+            <CardContent className="p-6 space-y-4 flex-1 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-teal-400 font-bold text-sm">
+                  <Video className="h-5 w-5" />
+                  <span>Video Call Integration</span>
+                </div>
+                <h3 className="text-base font-extrabold text-slate-100">Telehealth Google Meet Session</h3>
+                <p className="text-xs text-slate-400 font-light leading-relaxed">
+                  Click the button below to launch the video call with your patient. Please keep this portal open to log diagnosis, treatment plans, and prescriptions side-by-side.
+                </p>
+                <div className="p-3 bg-slate-950/60 rounded-xl border border-white/5 font-mono text-[10px] text-teal-400 break-all select-all flex items-center justify-between gap-2">
+                  <span>{meetUrl}</span>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+              
+              <Button asChild className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold h-11 rounded-xl flex items-center justify-center gap-2 mt-4 border-none shadow-md cursor-pointer">
+                <a href={meetUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Launch Google Meet</span>
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
 
-        {/* Bottom Call Controls & Simulated Patient Vitals Feed */}
-        <div className="grid grid-cols-1 md:grid-cols-3 items-center justify-between gap-4 border-t border-white/10 pt-4">
-          
-          {/* Network status */}
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/5 rounded-xl text-emerald-400">
-              <Activity className="h-5 w-5" />
-            </div>
-            <div>
-              <span className="text-[9px] text-slate-400 block uppercase font-bold">Network Status</span>
-              <span className="text-xs font-bold text-slate-100">Excellent (28ms)</span>
-            </div>
-          </div>
-
-          {/* Call Controls */}
-          <div className="flex items-center justify-center gap-4">
-            <Button 
-              onClick={() => setIsMuted(!isMuted)} 
-              variant="outline" 
-              size="icon" 
-              className={`rounded-full h-11 w-11 border-none shadow-sm ${
-                isMuted ? "bg-rose-600 text-white hover:bg-rose-700" : "bg-white/10 hover:bg-white/20 text-white"
-              }`}
-            >
-              {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </Button>
-            <Button 
-              onClick={() => setIsCamOff(!isCamOff)} 
-              variant="outline" 
-              size="icon" 
-              className={`rounded-full h-11 w-11 border-none shadow-sm ${
-                isCamOff ? "bg-rose-600 text-white hover:bg-rose-700" : "bg-white/10 hover:bg-white/20 text-white"
-              }`}
-            >
-              {isCamOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
-            </Button>
-            <Button 
-              onClick={handleHangUp} 
-              className="rounded-full h-11 w-11 bg-rose-600 hover:bg-rose-700 text-white border-none shadow-md"
-            >
-              <PhoneOff className="h-5 w-5" />
-            </Button>
-          </div>
-
-          {/* Heart rate monitor (vitals sensor simulator) */}
-          <div className="flex items-center justify-end gap-3">
-            <div className="p-2 bg-white/5 rounded-xl text-rose-500">
-              <Heart className="h-5 w-5 fill-current animate-pulse" />
-            </div>
-            <div className="text-right">
-              <span className="text-[9px] text-slate-400 block uppercase font-bold">Patient Pulse Sensor</span>
-              <span className="text-xs font-bold text-slate-100">{pulseRate} BPM</span>
-            </div>
-          </div>
+          {/* Patient Profile & Vitals Card */}
+          <Card className="bg-slate-900 border-white/5 rounded-2xl shadow-xl">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-2 text-rose-400 font-bold text-sm">
+                <Heart className="h-5 w-5" />
+                <span>Patient Profile & Vitals</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div className="bg-slate-950/50 p-3 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Age / Gender</span>
+                  <span className="font-extrabold text-slate-200 block mt-1">
+                    {getAge(appointment.patient?.dateOfBirth)} Years / {appointment.patient?.gender || "Male"}
+                  </span>
+                </div>
+                <div className="bg-slate-950/50 p-3 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Blood Type</span>
+                  <span className="font-extrabold text-slate-200 block mt-1">
+                    {appointment.patient?.bloodType || "O+"}
+                  </span>
+                </div>
+                <div className="col-span-2 bg-slate-950/50 p-3.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-slate-400 font-bold block uppercase">Booking Symptoms Note</span>
+                  <p className="text-xs text-slate-300 font-light italic mt-1.5 leading-relaxed">
+                    "{appointment.notes || "No booking notes specified"}"
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
         </div>
+
+        {/* Previous Consultation History log */}
+        <Card className="bg-slate-900 border-white/5 rounded-2xl shadow-xl flex-1 min-h-[220px]">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+              <FileText className="h-5 w-5" />
+              <span>Patient Medical History Timeline</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-start gap-4 p-4 border border-white/5 rounded-xl bg-slate-950/30">
+                <div className="p-2 bg-white/5 rounded-lg text-slate-400 mt-0.5">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs font-bold text-slate-200">Post-Surgical Follow-up</span>
+                    <span className="text-[10px] text-slate-500 font-bold">14 Days Ago</span>
+                  </div>
+                  <p className="text-xs text-slate-400 font-light leading-relaxed">
+                    Patient shows excellent recovery post-appendectomy. Wound site is healing cleanly with no signs of infection. Recommended continuation of light physical activity.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 border border-white/5 rounded-xl bg-slate-950/30">
+                <div className="p-2 bg-white/5 rounded-lg text-slate-400 mt-0.5">
+                  <Calendar className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-xs font-bold text-slate-200">General Health Assessment</span>
+                    <span className="text-[10px] text-slate-500 font-bold">8 Months Ago</span>
+                  </div>
+                  <p className="text-xs text-slate-400 font-light leading-relaxed">
+                    Cardiovascular response is excellent. Normal sinus rhythm observed on resting ECG. Blood pressure stable.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
       </div>
 
       {/* Right Area: EHR Notes and Finalize Form (1/3 width) */}
-      <div className="w-full md:w-96 border-l border-white/10 bg-slate-900/60 h-full flex flex-col justify-between p-6 overflow-y-auto">
+      <div className="w-full md:w-96 border-l border-white/10 bg-slate-900/60 h-full flex flex-col justify-between p-6 overflow-y-auto shrink-0">
         <form onSubmit={handleFinalize} className="space-y-6 flex flex-col justify-between h-full">
           <div className="space-y-6">
             
@@ -266,33 +230,6 @@ export default function DoctorConsultationRoomClient({ appointment }: DoctorCons
               <h2 className="text-lg font-bold text-slate-200 mt-1">Consultation Summary</h2>
             </div>
 
-            {/* Patient Vitals Quick Cards */}
-            <Card className="bg-white/5 border-white/5 rounded-2xl">
-              <CardContent className="p-4 space-y-3">
-                <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wide">Patient Vitals Profile</span>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-light block">Age / Gender</span>
-                    <span className="font-bold text-slate-200 block mt-0.5">
-                      {getAge(appointment.patient?.dateOfBirth)} Years / {appointment.patient?.gender || "Male"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-light block">Blood Type</span>
-                    <span className="font-bold text-slate-200 block mt-0.5">
-                      {appointment.patient?.bloodType || "O+"}
-                    </span>
-                  </div>
-                  <div className="col-span-2 pt-1 border-t border-white/5">
-                    <span className="text-[10px] text-slate-500 font-light block">Booking Symptoms Note</span>
-                    <p className="text-[11px] text-slate-300 font-light italic mt-0.5 leading-relaxed">
-                      "{appointment.notes || "No booking notes specified"}"
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Success and Error messages */}
             {errorMsg && (
               <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-xs font-medium">
@@ -300,7 +237,7 @@ export default function DoctorConsultationRoomClient({ appointment }: DoctorCons
               </div>
             )}
             {successMsg && (
-              <div className="p-3 bg-teal-500/10 border border-teal-500/20 text-teal-300 rounded-xl text-xs font-medium flex items-center gap-2">
+              <div className="p-3 bg-[#0a5c5f]/15 border border-[#0a5c5f]/30 text-teal-300 rounded-xl text-xs font-medium flex items-center gap-2">
                 <CheckCircle2 className="h-4.5 w-4.5 text-teal-400 shrink-0" />
                 <span>{successMsg}</span>
               </div>
@@ -312,48 +249,50 @@ export default function DoctorConsultationRoomClient({ appointment }: DoctorCons
               {/* Diagnosis Field */}
               <div className="space-y-1.5">
                 <Label htmlFor="diagnosis" className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <Stethoscope className="h-3.5 w-3.5 text-[#0a5c5f]" />
+                  <Stethoscope className="h-3.5 w-3.5 text-teal-400" />
                   <span>Clinical Diagnosis *</span>
                 </Label>
                 <Input 
                   type="text" 
                   id="diagnosis"
                   placeholder="e.g. Acute Bronchitis, Migraine..."
-                  className="bg-white/5 border-white/10 text-white rounded-xl focus:border-[#0a5c5f] focus:ring-[#0a5c5f] h-10 text-xs placeholder:text-slate-500 focus:outline-none"
+                  className="bg-white/5 border-white/10 text-white rounded-xl focus:border-teal-500 focus:ring-teal-500 h-10 text-xs placeholder:text-slate-500 focus:outline-none"
                   value={diagnosis}
                   onChange={(e) => setDiagnosis(e.target.value)}
                   disabled={isFinalizing || successMsg !== null}
+                  required
                 />
               </div>
 
               {/* Treatment Field */}
               <div className="space-y-1.5">
                 <Label htmlFor="treatment" className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <ClipboardList className="h-3.5 w-3.5 text-[#0a5c5f]" />
+                  <ClipboardList className="h-3.5 w-3.5 text-teal-400" />
                   <span>Treatment Plan *</span>
                 </Label>
                 <Input 
                   type="text" 
                   id="treatment"
                   placeholder="e.g. Rest for 3 days, hydrate, keep warm..."
-                  className="bg-white/5 border-white/10 text-white rounded-xl focus:border-[#0a5c5f] focus:ring-[#0a5c5f] h-10 text-xs placeholder:text-slate-500 focus:outline-none"
+                  className="bg-white/5 border-white/10 text-white rounded-xl focus:border-teal-500 focus:ring-teal-500 h-10 text-xs placeholder:text-slate-500 focus:outline-none"
                   value={treatment}
                   onChange={(e) => setTreatment(e.target.value)}
                   disabled={isFinalizing || successMsg !== null}
+                  required
                 />
               </div>
 
               {/* Prescriptions Field */}
               <div className="space-y-1.5">
                 <Label htmlFor="prescription" className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <Pill className="h-3.5 w-3.5 text-[#0a5c5f]" />
+                  <Pill className="h-3.5 w-3.5 text-teal-400" />
                   <span>Prescribed Medications (Optional)</span>
                 </Label>
                 <textarea 
                   id="prescription"
-                  rows={2}
+                  rows={3}
                   placeholder="e.g. 1. Albuterol inhaler - 2 puffs q4h&#10;2. Paracetamol 500mg - 1 tab q6h PRN"
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl focus:border-[#0a5c5f] focus:ring-1 focus:ring-[#0a5c5f] p-3 text-xs placeholder:text-slate-500 focus:outline-none leading-relaxed"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500 p-3 text-xs placeholder:text-slate-500 focus:outline-none leading-relaxed"
                   value={prescription}
                   onChange={(e) => setPrescription(e.target.value)}
                   disabled={isFinalizing || successMsg !== null}
@@ -363,14 +302,14 @@ export default function DoctorConsultationRoomClient({ appointment }: DoctorCons
               {/* Private Session Notes Field */}
               <div className="space-y-1.5">
                 <Label htmlFor="notes" className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-[#0a5c5f]" />
+                  <FileText className="h-3.5 w-3.5 text-teal-400" />
                   <span>Consultation Notes (Optional)</span>
                 </Label>
                 <textarea 
                   id="notes"
-                  rows={2}
+                  rows={3}
                   placeholder="Private notes (history, details, lifestyle recommendations...)"
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl focus:border-[#0a5c5f] focus:ring-1 focus:ring-[#0a5c5f] p-3 text-xs placeholder:text-slate-500 focus:outline-none leading-relaxed"
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl focus:border-teal-500 focus:ring-1 focus:ring-teal-500 p-3 text-xs placeholder:text-slate-500 focus:outline-none leading-relaxed"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   disabled={isFinalizing || successMsg !== null}
@@ -382,11 +321,11 @@ export default function DoctorConsultationRoomClient({ appointment }: DoctorCons
           </div>
 
           {/* Form Actions */}
-          <div className="pt-6 mt-8 border-t border-white/10 space-y-3">
+          <div className="pt-6 border-t border-white/10 space-y-3 shrink-0">
             <Button
               type="submit"
               disabled={isFinalizing || successMsg !== null}
-              className="w-full bg-[#0a5c5f] hover:bg-[#084a4c] text-white font-semibold h-11 rounded-xl flex items-center justify-center gap-2 border-none shadow-md"
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold h-11 rounded-xl flex items-center justify-center gap-2 border-none shadow-md cursor-pointer"
             >
               {isFinalizing ? (
                 <>

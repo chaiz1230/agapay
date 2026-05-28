@@ -74,8 +74,8 @@ export default async function PatientLayout({
       <aside className="hidden md:flex flex-col w-64 border-r border-slate-200 bg-white h-full justify-between p-6">
         <div className="space-y-8">
           {/* Logo Branding */}
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-[#0a5c5f] rounded-lg text-white">
+          <div className="flex items-center gap-3 px-4">
+            <div className="p-1.5 bg-[#0a5c5f] rounded-lg text-white shrink-0">
               <HeartPulse className="h-6 w-6" />
             </div>
             <span className="text-xl font-bold text-[#0a5c5f] tracking-wide">AGAPAY</span>
@@ -112,14 +112,13 @@ export default async function PatientLayout({
               await signOut({ redirectTo: "/login" });
             }}
           >
-            <Button
-              variant="ghost"
+            <button
               type="submit"
-              className="w-full flex items-center justify-start gap-3 h-10 px-3 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+              className="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 hover:text-red-600 rounded-xl transition-all text-left font-semibold"
             >
               <LogOut className="h-5 w-5" />
-              <span className="text-sm font-medium">Log out</span>
-            </Button>
+              <span className="text-sm">Log out</span>
+            </button>
           </form>
         </div>
       </aside>

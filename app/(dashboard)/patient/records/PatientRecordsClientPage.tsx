@@ -41,6 +41,7 @@ export default function PatientRecordsClientPage({ initialRecords, patientId }: 
     type: "CONSULTATION",
     status: "Completed",
     notes: r.treatment + (r.notes ? `\n\nNotes: ${r.notes}` : ""),
+    prescription: r.prescription || "",
     files: []
   })), [initialRecords]);
 
@@ -339,6 +340,16 @@ export default function PatientRecordsClientPage({ initialRecords, patientId }: 
                         </p>
                       </div>
 
+                      {/* Prescription details */}
+                      {record.prescription && (
+                        <div className="p-4 bg-teal-50/30 border border-teal-200/40 rounded-xl space-y-1.5 mt-2">
+                          <span className="text-[10px] font-bold text-[#0a5c5f] block uppercase tracking-wide">Prescribed Medications</span>
+                          <p className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-wrap">
+                            {record.prescription}
+                          </p>
+                        </div>
+                      )}
+
                       {/* File details (Instead of broken PDF download links) */}
                       {record.files && record.files.length > 0 && (
                         <div className="space-y-2 mt-3 pt-3 border-t border-slate-100">
@@ -378,16 +389,25 @@ export default function PatientRecordsClientPage({ initialRecords, patientId }: 
                       </div>
                     </Card>
                   ) : (
-                    <Card className="border-slate-100 bg-slate-50/30 p-5 rounded-2xl text-left flex flex-col justify-between h-full min-h-[140px]">
+                    <Card className="border-slate-100 bg-slate-50/30 p-5 rounded-2xl text-left flex flex-col justify-start">
                       <div>
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Session Details</h4>
-                        <p className="text-xs text-slate-500 font-light mt-2 leading-relaxed">
+                        <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Session Details</h4>
+                        <p className="text-xs text-slate-700 font-normal mt-2 leading-relaxed">
                           Consultation notes compiled electronically during the telehealth video session.
                         </p>
-                        <div className="mt-4 space-y-1 text-[10px] text-slate-400 font-semibold border-t border-slate-100/60 pt-2">
-                          <div className="flex justify-between"><span>Duration:</span><span>45 min</span></div>
-                          <div className="flex justify-between"><span>Platform:</span><span>Agapay Room</span></div>
-                          <div className="flex justify-between"><span>Encryption:</span><span>HIPAA Secure</span></div>
+                        <div className="mt-4 space-y-2 text-xs text-slate-600 font-semibold border-t border-slate-200/60 pt-3">
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Duration:</span>
+                            <span className="text-slate-800 font-bold">45 min</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Platform:</span>
+                            <span className="text-slate-800 font-bold">Agapay Room</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Encryption:</span>
+                            <span className="text-slate-800 font-bold">HIPAA Secure</span>
+                          </div>
                         </div>
                       </div>
                     </Card>

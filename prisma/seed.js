@@ -120,6 +120,79 @@ async function main() {
     });
   }
 
+  // 3. Seed Appointments
+  console.log("Seeding appointments...");
+  const elenaSantos = await prisma.doctor.findFirst({
+    where: { user: { email: "elena.santos@agapay.com" } }
+  });
+
+  const patient = await prisma.patient.findFirst({
+    where: { user: { email: "patient@agapay.com" } }
+  });
+
+  if (elenaSantos && patient) {
+    // A pending appointment for Angela Tan (using our patient profile)
+    await prisma.appointment.create({
+      data: {
+        patientId: patient.id,
+        doctorId: elenaSantos.id,
+        dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // tomorrow
+        status: "PENDING",
+        notes: "Sore throat and persistent cough for 3 days.",
+        cost: 1500.0,
+      }
+    });
+
+    // A pending appointment for Enrique Gil (using our patient profile)
+    await prisma.appointment.create({
+      data: {
+        patientId: patient.id,
+        doctorId: elenaSantos.id,
+        dateTime: new Date(Date.now() + 48 * 60 * 60 * 1000), // in 2 days
+        status: "PENDING",
+        notes: "Follow-up checkup for blood pressure medication.",
+        cost: 1500.0,
+      }
+    });
+
+    // A confirmed appointment for today's queue
+    await prisma.appointment.create({
+      data: {
+        patientId: patient.id,
+        doctorId: elenaSantos.id,
+        dateTime: new Date(), // today/now
+        status: "CONFIRMED",
+        notes: "Routine cardiovascular checkup.",
+        cost: 1500.0,
+      }
+    });
+    
+    // A completed appointment
+    const completedAppt = await prisma.appointment.create({
+      data: {
+        patientId: patient.id,
+        doctorId: elenaSantos.id,
+        dateTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        status: "COMPLETED",
+        notes: "Chest discomfort investigation.",
+        cost: 1500.0,
+        prescription: "1. Aspirin 81mg - 1 tab daily\n2. Atorvastatin 20mg - 1 tab at bedtime",
+      }
+    });
+
+    // A medical record associated with the completed appointment
+    await prisma.medicalRecord.create({
+      data: {
+        patientId: patient.id,
+        doctorId: elenaSantos.id,
+        diagnosis: "Mild Hypercholesterolemia",
+        treatment: "Advised low-fat diet, regular cardiovascular exercise 30 mins daily, and medication compliance.",
+        notes: "Patient is recovering well. Blood pressure is stable at 125/80. Heart rate 72 bpm.",
+        createdAt: completedAppt.dateTime
+      }
+    });
+  }
+
   console.log("Database seeded successfully!");
 }
 
