@@ -101,13 +101,6 @@ export default async function HomePage() {
               <span className="text-lg font-bold text-[#0a5c5f] tracking-wide">AGAPAY</span>
             </Link>
 
-            {/* Navigation Links */}
-            <nav className="hidden md:flex items-center gap-6">
-              <Link href="#" className="text-sm text-slate-600 hover:text-[#0a5c5f] font-medium transition-colors">Solutions</Link>
-              <Link href="#" className="text-sm text-slate-600 hover:text-[#0a5c5f] font-medium transition-colors">Providers</Link>
-              <Link href="#" className="text-sm text-slate-600 hover:text-[#0a5c5f] font-medium transition-colors">Pricing</Link>
-              <Link href="#" className="text-sm text-slate-600 hover:text-[#0a5c5f] font-medium transition-colors">About</Link>
-            </nav>
           </div>
 
           <div className="flex items-center gap-4">
