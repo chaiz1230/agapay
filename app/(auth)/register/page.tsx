@@ -33,6 +33,7 @@ export default function RegisterPage() {
       licenseNumber: "",
       experienceYears: 0,
       consultFee: 0,
+      consent: false as any,
     },
   });
 
@@ -382,6 +383,30 @@ export default function RegisterPage() {
                   </div>
                 </div>
               )}
+
+              <FormField
+                control={form.control}
+                name="consent"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border border-slate-100 bg-slate-50/50 p-4 mt-4">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value === true}
+                        onChange={field.onChange}
+                        disabled={isLoading}
+                        className="h-4 w-4 rounded border-slate-300 text-[#0a5c5f] focus:ring-[#0a5c5f] mt-0.5 accent-[#0a5c5f] cursor-pointer"
+                      />
+                    </FormControl>
+                    <div className="space-y-1.5 leading-none">
+                      <FormLabel className="text-xs font-semibold text-slate-600 leading-normal cursor-pointer select-none">
+                        I consent to the collection, usage, and processing of my personal and health-related sensitive data in accordance with the Data Privacy Policy.
+                      </FormLabel>
+                      <FormMessage className="text-[10px] text-rose-500 font-bold" />
+                    </div>
+                  </FormItem>
+                )}
+              />
 
               <Button
                 type="submit"

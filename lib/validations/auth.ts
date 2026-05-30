@@ -16,6 +16,10 @@ export const RegisterSchema = z.object({
   licenseNumber: z.string().optional(),
   experienceYears: z.coerce.number().min(0, "Experience must be a positive number").optional(),
   consultFee: z.coerce.number().min(0, "Consultation fee must be a positive number").optional(),
+  consent: z.literal(true, {
+    message: "You must consent to the processing of your data.",
+  }),
 });
 
 export type RegisterInput = z.infer<typeof RegisterSchema>;
+
