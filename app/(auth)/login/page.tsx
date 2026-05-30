@@ -120,6 +120,7 @@ export default function LoginPage() {
           {/* Social login buttons */}
           <div className="grid grid-cols-2 gap-4">
             <Button
+              onClick={() => alert("Google Sign-In is disabled in this MVP sandbox build. Please register and log in using your email credentials.")}
               variant="outline"
               type="button"
               className="flex items-center justify-center gap-2 border-slate-200 hover:bg-slate-100 text-slate-700 h-11 rounded-lg"
@@ -145,6 +146,7 @@ export default function LoginPage() {
               <span>Google</span>
             </Button>
             <Button
+              onClick={() => alert("Apple ID Sign-In is disabled in this MVP sandbox build. Please register and log in using your email credentials.")}
               variant="outline"
               type="button"
               className="flex items-center justify-center gap-2 border-slate-200 hover:bg-slate-100 text-slate-700 h-11 rounded-lg"
