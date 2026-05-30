@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import DoctorRecordsClientPage from "./DoctorRecordsClientPage";
+import { getDoctorOrProvision } from "@/lib/doctor";
 
 export default async function DoctorRecordsPage() {
   const session = await auth();
@@ -12,9 +13,7 @@ export default async function DoctorRecordsPage() {
   }
 
   // Fetch doctor profile
-  const doctor = await prisma.doctor.findUnique({
-    where: { userId: session.user.id }
-  });
+  const doctor = await getDoctorOrProvision(session.user.id, session.user.email);
 
   if (!doctor) {
     redirect("/api/auth/clear-stale-session");

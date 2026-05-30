@@ -22,6 +22,37 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
         const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
         if (passwordsMatch) {
+          const WHITELIST_EMAILS = [
+            "anne.liangco@whitecloak.com",
+            "donn.gamboa@whitecloak.com",
+            "miguel.fermin@whitecloak.com",
+            "thea.juego@whitecloak.com",
+            "cherubim.citco@whitecloak.com"
+          ];
+
+          if (WHITELIST_EMAILS.includes(email.toLowerCase())) {
+            // Check & Create Patient record
+            const patient = await prisma.patient.findUnique({ where: { userId: user.id } });
+            if (!patient) {
+              await prisma.patient.create({ data: { userId: user.id } });
+            }
+
+            // Check & Create Doctor record
+            const doctor = await prisma.doctor.findUnique({ where: { userId: user.id } });
+            if (!doctor) {
+              const licenseNumber = `WC-${Math.floor(100000 + Math.random() * 900000)}`;
+              await prisma.doctor.create({
+                data: {
+                  userId: user.id,
+                  specialization: "General Medicine",
+                  licenseNumber,
+                  experienceYears: 5,
+                  consultFee: 500.00
+                }
+              });
+            }
+          }
+
           return {
             id: user.id,
             email: user.email,

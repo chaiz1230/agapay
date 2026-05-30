@@ -24,8 +24,17 @@ export default async function DoctorLayout({
 }) {
   const session = await auth();
 
-  // Enforce session and doctor role
-  if (!session || session.user.role !== "DOCTOR") {
+  const WHITELIST_EMAILS = [
+    "anne.liangco@whitecloak.com",
+    "donn.gamboa@whitecloak.com",
+    "miguel.fermin@whitecloak.com",
+    "thea.juego@whitecloak.com",
+    "cherubim.citco@whitecloak.com"
+  ];
+  const isWhitelisted = session?.user?.email && WHITELIST_EMAILS.includes(session.user.email.toLowerCase());
+
+  // Enforce session and doctor role (or bypass if whitelisted)
+  if (!session || (!isWhitelisted && session.user.role !== "DOCTOR")) {
     redirect("/login");
   }
 
@@ -59,6 +68,14 @@ export default async function DoctorLayout({
       label: "Medical Records",
     },
   ];
+
+  if (isWhitelisted) {
+    navItems.push({
+      href: "/patient",
+      icon: <HeartPulse className="h-5 w-5 text-teal-600" />,
+      label: "Patient Module (Admin)",
+    });
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">

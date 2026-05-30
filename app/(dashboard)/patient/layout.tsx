@@ -27,8 +27,17 @@ export default async function PatientLayout({
 }) {
   const session = await auth();
 
-  // Enforce session and patient role
-  if (!session || session.user.role !== "PATIENT") {
+  const WHITELIST_EMAILS = [
+    "anne.liangco@whitecloak.com",
+    "donn.gamboa@whitecloak.com",
+    "miguel.fermin@whitecloak.com",
+    "thea.juego@whitecloak.com",
+    "cherubim.citco@whitecloak.com"
+  ];
+  const isWhitelisted = session?.user?.email && WHITELIST_EMAILS.includes(session.user.email.toLowerCase());
+
+  // Enforce session and patient role (or bypass if whitelisted)
+  if (!session || (!isWhitelisted && session.user.role !== "PATIENT")) {
     redirect("/login");
   }
 
@@ -68,6 +77,14 @@ export default async function PatientLayout({
       label: "AI Assistant",
     },
   ];
+
+  if (isWhitelisted) {
+    navItems.push({
+      href: "/doctor",
+      icon: <User className="h-5 w-5 text-indigo-600" />,
+      label: "Doctor Module (Admin)",
+    });
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
