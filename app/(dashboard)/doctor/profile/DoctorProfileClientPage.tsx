@@ -165,13 +165,23 @@ export default function DoctorProfileClientPage({
                   </div>
                 </div>
               </div>
-              <Button 
-                onClick={() => handleSubmit()} 
-                disabled={isLoading}
-                className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white font-semibold h-11 px-6 rounded-xl border-none shadow-sm cursor-pointer shrink-0"
-              >
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
+              <div className="flex gap-2.5 shrink-0">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleDiscard}
+                  className="rounded-xl border-slate-200 text-slate-600 font-semibold h-11 px-5 bg-white hover:bg-slate-50 shadow-sm"
+                >
+                  Discard Changes
+                </Button>
+                <Button 
+                  onClick={() => handleSubmit()} 
+                  disabled={isLoading}
+                  className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white font-semibold h-11 px-6 rounded-xl border-none shadow-sm cursor-pointer"
+                >
+                  {isLoading ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -358,17 +368,6 @@ export default function DoctorProfileClientPage({
             </Button>
           </Card>
 
-          {/* Professional Bio Tips */}
-          <Card className="bg-[#0a5c5f]/5 border border-[#0a5c5f]/15 rounded-2xl p-5 text-left space-y-3">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <HelpCircle className="h-4.5 w-4.5 text-[#0a5c5f]" />
-              <span>Professional Bio Tips</span>
-            </h4>
-            <p className="text-slate-650 text-xs font-light leading-relaxed">
-              Patients look for empathy and clear communication. Keep your bio concise, highlight your primary areas of focus, and mention why you enjoy telehealth.
-            </p>
-          </Card>
-
         </div>
 
       </div>
@@ -376,23 +375,6 @@ export default function DoctorProfileClientPage({
       {/* Bottom Footer Actions */}
       <div className="flex justify-between items-center pt-6 border-t border-slate-200 text-xs text-slate-400">
         <span>Last updated: October 24, 2023 • 09:42 AM</span>
-        <div className="flex gap-3">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleDiscard}
-            className="rounded-xl border-slate-200 text-slate-600 font-semibold h-10 px-5 bg-white hover:bg-slate-50"
-          >
-            Discard Changes
-          </Button>
-          <Button 
-            onClick={() => handleSubmit()} 
-            disabled={isLoading}
-            className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white font-semibold h-10 px-6 rounded-xl border-none shadow-md"
-          >
-            {isLoading ? "Saving Profile..." : "Update Profile"}
-          </Button>
-        </div>
       </div>
 
     </div>

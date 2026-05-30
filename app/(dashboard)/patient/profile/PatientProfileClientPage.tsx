@@ -141,23 +141,6 @@ export default function PatientProfileClientPage({ patient }: PatientProfileClie
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Edit Profile</h1>
             <p className="text-xs text-slate-500 font-light mt-0.5">Manage your personal details and residential address</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={handleCancel}
-              className="rounded-xl border-slate-200 text-slate-600 font-semibold h-10 px-4"
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white font-semibold h-10 px-5 rounded-xl border-none shadow-sm"
-            >
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
         </div>
 
         {/* Profile Picture Card */}
