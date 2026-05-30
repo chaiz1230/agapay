@@ -103,6 +103,14 @@ Keeps patient diagnoses and historical clinic treatment charts.
 * `treatment` (String) - Prescribed therapy, drugs, or exercises
 * `notes` (String, Optional) - Additional practitioner feedback
 
+#### 6. `Notification`
+Stores read/unread system notifications triggered by scheduling and status updates.
+* `id` (String, UUID, PK)
+* `userId` (String, FK) - References `User(id)`
+* `message` (String) - Notification message content
+* `read` (Boolean) - Read/unread status (default: false)
+* `createdAt` (DateTime) - Date and time notification was created
+
 ---
 
 ## 4. Key Functional Features
@@ -117,12 +125,22 @@ Keeps patient diagnoses and historical clinic treatment charts.
 * **Appointments Hub**: Features active tabs showing current and past bookings, a scheduling module with custom date/time selection, and Google Meet integration.
 * **Digital Records Desk**: Supports record filtering by doctor name/specialty, drag-and-drop file uploading mock indicators, and full report view cards.
 * **AI Symptom Assister**: Interacts with patients to review symptoms (e.g., dry cough) and highlights matches with HSL-tailored diagnostic suggestion blocks and compact vertical specialist cards.
+* **Patient-Side Doctor Search Filter**: Allows patients to filter active or past consultations in real-time by entering the doctor's name.
+* **Digital Prescription Desk & Printer Layout**: Patients can view signed prescriptions in a stylized Rx medical layout and print them directly to PDF or paper format.
+* **Real-Time Notification Center**: A floating notification bell icon in the sidebar badge showing the number of unread alerts, updating every 4 seconds via polling.
 
 ### 🥼 Doctor Portal
 * **Today's Queue**: Organizes active patient consultations for the current day with direct Google Meet connection URLs.
 * **Google Meet Link Generator**: Formats Google Meet conference paths (e.g. `https://meet.google.com/xxx-xxxx-xxx`) dynamically from appointment IDs.
 * **Appointments & Queue Managers**: Doctors can approve pending patient requests or reschedule them instantly.
 * **Clinic Metrics**: Generates visual representations of patient traffic statistics, monthly revenue margins, and client satisfaction charts.
+* **Prescription Logging & Final EHR**: Enables doctors to finalize consultation diagnostics, treatment plans, and add active prescriptions that sync instantly to the patient's record hub.
+
+### 🔒 Date & Time Guards (Data Integrity & Legality)
+* **Date Bounds**: Rejects historical date selections on calendar pickers by specifying a dynamic local `min` date constraint.
+* **Disabled Past Timeslots**: Dynamically checks and disables/greys out elapsed timeslots for the current date.
+* **Backend Validation**: Enforces server-side checks in database mutations (`bookAppointment` and `rescheduleAppointment`) to block past submissions.
+* **Data Processing Consent Checkbox**: Added a mandatory checkbox on the registration page to ensure patient and doctor users consent to data collection and processing in accordance with the Data Privacy Policy before account creation.
 
 ---
 
