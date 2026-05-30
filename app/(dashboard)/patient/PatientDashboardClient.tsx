@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getMeetUrl } from "@/utils/meet";
 
 interface PatientDashboardClientProps {
   firstName: string;
@@ -225,12 +226,7 @@ export default function PatientDashboardClient({ firstName, appointments, record
                   const day = apptDate.toLocaleDateString("en-US", { day: "numeric" });
                   const timeRange = apptDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
-                  // Deterministic Google Meet URL
-                  const cleanId = appt.id.replace(/[^a-z]/g, "");
-                  const p1 = (cleanId.substring(0, 3) || "aga").padEnd(3, "a");
-                  const p2 = (cleanId.substring(3, 7) || "meet").padEnd(4, "m");
-                  const p3 = (cleanId.substring(7, 10) || "pay").padEnd(3, "p");
-                  const meetUrl = `https://meet.google.com/${p1}-${p2}-${p3}`;
+                  const meetUrl = getMeetUrl(appt.id);
 
                   return (
                     <div key={appt.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border border-slate-100 hover:border-slate-200 transition-colors rounded-2xl bg-slate-50/50 gap-4">

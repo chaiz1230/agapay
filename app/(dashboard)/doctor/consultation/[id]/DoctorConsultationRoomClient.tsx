@@ -23,6 +23,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { finalizeConsultation } from "@/actions/appointments";
+import { getMeetUrl } from "@/utils/meet";
 
 interface DoctorConsultationRoomClientProps {
   appointment: any;
@@ -42,12 +43,7 @@ export default function DoctorConsultationRoomClient({ appointment }: DoctorCons
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Deterministic Google Meet URL
-  const cleanId = appointment.id.replace(/[^a-z]/g, "");
-  const p1 = (cleanId.substring(0, 3) || "aga").padEnd(3, "a");
-  const p2 = (cleanId.substring(3, 7) || "meet").padEnd(4, "m");
-  const p3 = (cleanId.substring(7, 10) || "pay").padEnd(3, "p");
-  const meetUrl = `https://meet.google.com/${p1}-${p2}-${p3}`;
+  const meetUrl = getMeetUrl(appointment.id);
 
   // Submit final EHR report
   const handleFinalize = async (e: React.FormEvent) => {

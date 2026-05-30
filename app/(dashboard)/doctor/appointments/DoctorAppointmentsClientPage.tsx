@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { getMeetUrl } from "@/utils/meet";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar } from "@/components/ui/avatar";
@@ -205,12 +206,7 @@ export default function DoctorAppointmentsClientPage({ appointments, doctorId }:
             });
             const timeStr = apptDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
-            // Deterministic Google Meet URL
-            const cleanId = appt.id.replace(/[^a-z]/g, "");
-            const p1 = (cleanId.substring(0, 3) || "aga").padEnd(3, "a");
-            const p2 = (cleanId.substring(3, 7) || "meet").padEnd(4, "m");
-            const p3 = (cleanId.substring(7, 10) || "pay").padEnd(3, "p");
-            const meetUrl = `https://meet.google.com/${p1}-${p2}-${p3}`;
+            const meetUrl = getMeetUrl(appt.id);
 
             const isPending = appt.status === "PENDING";
             const isConfirmed = appt.status === "CONFIRMED";

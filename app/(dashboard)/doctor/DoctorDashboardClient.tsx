@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
+import { getMeetUrl } from "@/utils/meet";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -328,11 +329,7 @@ export default function DoctorDashboardClient({
                 </>
               ) : (
                 queueAppointments.map((appt) => {
-                  const cleanId = appt.id.replace(/[^a-z]/g, "");
-                  const p1 = (cleanId.substring(0, 3) || "aga").padEnd(3, "a");
-                  const p2 = (cleanId.substring(3, 7) || "meet").padEnd(4, "m");
-                  const p3 = (cleanId.substring(7, 10) || "pay").padEnd(3, "p");
-                  const meetUrl = `https://meet.google.com/${p1}-${p2}-${p3}`;
+                  const meetUrl = getMeetUrl(appt.id);
 
                   return (
                     <div key={appt.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border border-slate-100 hover:border-slate-200 transition-all rounded-2xl bg-slate-50/50 gap-4">

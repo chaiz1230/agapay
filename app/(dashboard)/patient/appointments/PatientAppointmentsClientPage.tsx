@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cancelAppointment, rescheduleAppointment } from "@/actions/appointments";
+import { getMeetUrl } from "@/utils/meet";
 
 interface PatientAppointmentsClientPageProps {
   appointments: any[];
@@ -50,6 +51,9 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Active prescription modal target
+  const [selectedPrescriptionAppt, setSelectedPrescriptionAppt] = useState<any | null>(null);
 
   const timeslots = [
     "09:00 AM", "10:30 AM", "11:15 AM", "02:00 PM", "03:30 PM", "04:15 PM"
@@ -188,12 +192,7 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
             const timeStr = apptDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
             const docImage = getDoctorImage(appt.doctor.user?.name || "");
 
-            // Deterministic Google Meet URL
-            const cleanId = appt.id.replace(/[^a-z]/g, "");
-            const p1 = (cleanId.substring(0, 3) || "aga").padEnd(3, "a");
-            const p2 = (cleanId.substring(3, 7) || "meet").padEnd(4, "m");
-            const p3 = (cleanId.substring(7, 10) || "pay").padEnd(3, "p");
-            const meetUrl = `https://meet.google.com/${p1}-${p2}-${p3}`;
+            const meetUrl = getMeetUrl(appt.id);
 
             const isPending = appt.status === "PENDING";
             const isConfirmed = appt.status === "CONFIRMED";
@@ -298,12 +297,23 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                     </Button>
                   )}
                   {isCompleted && (
-                    <Button asChild size="sm" className="flex-1 bg-[#0a5c5f]/10 text-[#0a5c5f] hover:bg-[#0a5c5f]/20 font-bold text-xs h-10 rounded-xl border-none shadow-none">
-                      <Link href="/patient/records" className="flex items-center justify-center gap-1">
-                        <span>View EHR Record</span>
-                        <ChevronRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
+                    <div className="flex w-full gap-2">
+                      <Button asChild size="sm" className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs h-10 rounded-xl border-none shadow-none">
+                        <Link href="/patient/records" className="flex items-center justify-center gap-1">
+                          <span>View EHR Record</span>
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      {appt.prescription && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => setSelectedPrescriptionAppt(appt)}
+                          className="flex-1 bg-[#0a5c5f]/10 text-[#0a5c5f] hover:bg-[#0a5c5f]/20 font-bold text-xs h-10 rounded-xl border-none shadow-none"
+                        >
+                          View Prescription
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               </Card>
@@ -373,6 +383,76 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                   Request Reschedule
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      {/* View Prescription Dialog */}
+      <Dialog open={!!selectedPrescriptionAppt} onOpenChange={() => setSelectedPrescriptionAppt(null)}>
+        {selectedPrescriptionAppt && (
+          <DialogContent className="max-w-lg rounded-3xl p-6 bg-white border border-slate-100 font-sans">
+            <DialogHeader className="pb-3 border-b border-slate-100 text-center">
+              <div className="mx-auto bg-[#0a5c5f]/5 p-2 rounded-2xl w-fit mb-2">
+                <span className="text-[#0a5c5f] font-black tracking-widest text-lg">AGAPAY CLINICAL CARE</span>
+              </div>
+              <DialogTitle className="text-sm font-bold text-slate-500 uppercase tracking-widest">Electronic Prescription</DialogTitle>
+              <DialogDescription className="text-xs text-slate-400 font-light">Verified digital Rx prescription document</DialogDescription>
+            </DialogHeader>
+
+            <div className="py-6 space-y-6">
+              {/* Doctor and License Info */}
+              <div className="flex justify-between items-start text-xs border-b border-slate-100 pb-4">
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">Dr. {selectedPrescriptionAppt.doctor.user.name}</h4>
+                  <p className="text-slate-500">{selectedPrescriptionAppt.doctor.specialization} Specialist</p>
+                  <p className="text-[10px] text-slate-400 mt-1">PRC License No: {selectedPrescriptionAppt.doctor.licenseNumber || "N/A"}</p>
+                </div>
+                <div className="text-right text-slate-500">
+                  <p className="font-semibold">Date Issued:</p>
+                  <p className="text-slate-800 font-bold">{new Date(selectedPrescriptionAppt.dateTime).toLocaleDateString("en-US", {
+                    month: "long", day: "numeric", year: "numeric"
+                  })}</p>
+                </div>
+              </div>
+
+              {/* Rx prescription pad details */}
+              <div className="relative bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+                <span className="absolute top-2 left-4 text-slate-200 font-serif text-6xl select-none font-bold italic">Rx</span>
+                <div className="pt-6 pl-4 space-y-3 z-10 relative">
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">Medication & Dosage Instructions</p>
+                  <div className="text-sm text-slate-600 leading-relaxed font-mono bg-white border border-slate-100 p-4 rounded-xl shadow-sm whitespace-pre-line">
+                    {selectedPrescriptionAppt.prescription}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer details / verification */}
+              <div className="text-center space-y-2 border-t border-slate-100 pt-4">
+                <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-full">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                  <span>Electronically Signed & Secured</span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-light">
+                  This document serves as an official electronic prescription. If you require a printed copy for pharmacy presentation, please click print or take a screenshot.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setSelectedPrescriptionAppt(null)}
+                className="flex-1 rounded-xl h-11 border-slate-200"
+              >
+                Close
+              </Button>
+              <Button 
+                onClick={() => window.print()}
+                className="flex-1 bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl h-11 font-semibold flex items-center justify-center gap-2"
+              >
+                Print Prescription
+              </Button>
             </div>
           </DialogContent>
         )}

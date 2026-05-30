@@ -36,6 +36,34 @@ export async function bookAppointment(data: {
       },
     });
 
+    // Fetch details to create notification for the doctor
+    const doctor = await prisma.doctor.findUnique({
+      where: { id: data.doctorId },
+      select: { userId: true }
+    });
+    const patient = await prisma.patient.findUnique({
+      where: { id: data.patientId },
+      include: { user: { select: { name: true } } }
+    });
+
+    if (doctor && patient) {
+      const formattedDate = new Date(data.dateTime).toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: doctor.userId,
+          message: `New appointment booked by ${patient.user.name} for ${formattedDate}.`,
+          read: false,
+        }
+      });
+    }
+
     return { 
       success: true, 
       appointment: {
@@ -56,6 +84,25 @@ export async function approveAppointment(appointmentId: string) {
         status: AppointmentStatus.CONFIRMED,
       },
     });
+
+    const detailedAppointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: { include: { user: { select: { name: true } } } },
+        patient: { select: { userId: true } }
+      }
+    });
+
+    if (detailedAppointment) {
+      await prisma.notification.create({
+        data: {
+          userId: detailedAppointment.patient.userId,
+          message: `Your appointment with Dr. ${detailedAppointment.doctor.user.name} has been confirmed.`,
+          read: false,
+        }
+      });
+    }
+
     return { 
       success: true, 
       appointment: {
@@ -76,6 +123,33 @@ export async function cancelAppointment(appointmentId: string) {
         status: AppointmentStatus.CANCELLED,
       },
     });
+
+    const detailedAppointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: { include: { user: { select: { name: true } } } },
+        patient: { include: { user: { select: { name: true } } } }
+      }
+    });
+
+    if (detailedAppointment) {
+      await prisma.notification.create({
+        data: {
+          userId: detailedAppointment.patient.userId,
+          message: `Your appointment with Dr. ${detailedAppointment.doctor.user.name} has been cancelled.`,
+          read: false,
+        }
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: detailedAppointment.doctor.userId,
+          message: `The appointment with patient ${detailedAppointment.patient.user.name} has been cancelled.`,
+          read: false,
+        }
+      });
+    }
+
     return { 
       success: true, 
       appointment: {
@@ -97,6 +171,41 @@ export async function rescheduleAppointment(appointmentId: string, newDateTime: 
         status: AppointmentStatus.PENDING,
       },
     });
+
+    const detailedAppointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: { include: { user: { select: { name: true } } } },
+        patient: { include: { user: { select: { name: true } } } }
+      }
+    });
+
+    if (detailedAppointment) {
+      const formattedDate = new Date(newDateTime).toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: detailedAppointment.patient.userId,
+          message: `Your appointment with Dr. ${detailedAppointment.doctor.user.name} has been rescheduled to ${formattedDate}.`,
+          read: false,
+        }
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: detailedAppointment.doctor.userId,
+          message: `The appointment with patient ${detailedAppointment.patient.user.name} has been rescheduled to ${formattedDate}.`,
+          read: false,
+        }
+      });
+    }
+
     return { 
       success: true, 
       appointment: {

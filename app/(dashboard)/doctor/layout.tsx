@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import SidebarNav from "@/components/SidebarNav";
+import NotificationBell from "@/components/NotificationBell";
 
 export default async function DoctorLayout({
   children,
@@ -65,11 +66,14 @@ export default async function DoctorLayout({
       <aside className="hidden md:flex flex-col w-64 border-r border-slate-200 bg-white h-full justify-between p-6">
         <div className="space-y-8">
           {/* Logo Branding */}
-          <div className="flex items-center gap-3 px-4">
-            <div className="p-1.5 bg-[#0a5c5f] rounded-lg text-white shrink-0">
-              <HeartPulse className="h-6 w-6" />
+          <div className="flex items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 bg-[#0a5c5f] rounded-lg text-white shrink-0">
+                <HeartPulse className="h-6 w-6" />
+              </div>
+              <span className="text-xl font-bold text-[#0a5c5f] tracking-wide">AGAPAY</span>
             </div>
-            <span className="text-xl font-bold text-[#0a5c5f] tracking-wide">AGAPAY</span>
+            <NotificationBell />
           </div>
 
           {/* Navigation Links */}
@@ -125,11 +129,14 @@ export default async function DoctorLayout({
             <span className="text-lg font-bold text-[#0a5c5f] tracking-wide">AGAPAY</span>
           </div>
 
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-[#0a5c5f]/5 text-[#0a5c5f] text-xs font-semibold">
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-[#0a5c5f]/5 text-[#0a5c5f] text-xs font-semibold">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </header>
 
         {/* Scrollable Container */}

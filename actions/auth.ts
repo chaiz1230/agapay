@@ -72,6 +72,15 @@ export async function registerUser(values: RegisterInput) {
   }
 }
 
+function isRedirect(error: any): boolean {
+  return (
+    error &&
+    typeof error === "object" &&
+    typeof error.digest === "string" &&
+    error.digest.startsWith("NEXT_REDIRECT")
+  );
+}
+
 export async function loginUser(values: LoginInput) {
   const validated = LoginSchema.safeParse(values);
   if (!validated.success) {
@@ -93,7 +102,7 @@ export async function loginUser(values: LoginInput) {
     });
 
     return { success: true, role: user?.role };
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
@@ -102,6 +111,9 @@ export async function loginUser(values: LoginInput) {
         default:
           return { error: "Something went wrong." };
       }
+    }
+    if (isRedirect(error)) {
+      throw error;
     }
     return { error: "An unexpected error occurred." };
   }

@@ -64,6 +64,7 @@ export default async function PatientAppointmentsPage() {
       id: appt.doctor.id,
       specialization: appt.doctor.specialization,
       consultFee: Number(appt.doctor.consultFee),
+      licenseNumber: appt.doctor.licenseNumber,
       user: {
         name: appt.doctor.user.name,
         email: appt.doctor.user.email
