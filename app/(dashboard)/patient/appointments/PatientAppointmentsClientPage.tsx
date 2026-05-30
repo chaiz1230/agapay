@@ -14,7 +14,8 @@ import {
   CalendarDays,
   User,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,8 +45,33 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
   
   // Reschedule state
   const [rescheduleTarget, setRescheduleTarget] = useState<any | null>(null);
-  const [rescheduleDate, setRescheduleDate] = useState("2026-05-28");
-  const [rescheduleTime, setRescheduleTime] = useState("09:00 AM");
+  const [rescheduleDate, setRescheduleDate] = useState(() => {
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    return new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+  });
+  const [rescheduleTime, setRescheduleTime] = useState("");
+
+  // Helper to check if a specific timeslot has already passed for a given date
+  const isTimeSlotPassed = (dateStr: string, slot: string) => {
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const todayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+    
+    if (dateStr > todayStr) return false;
+    if (dateStr < todayStr) return true;
+
+    // Parse slot time e.g., "09:00 AM", "02:00 PM"
+    const [time, modifier] = slot.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+    if (modifier === "PM" && hours < 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+
+    const slotTime = new Date(today);
+    slotTime.setHours(hours, minutes, 0, 0);
+
+    return slotTime.getTime() < today.getTime();
+  };
   
   // Loading & Notification state
   const [isLoading, setIsLoading] = useState(false);
@@ -54,19 +80,26 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
   
   // Active prescription modal target
   const [selectedPrescriptionAppt, setSelectedPrescriptionAppt] = useState<any | null>(null);
+  
+  // Search query for doctor name
+  const [searchQuery, setSearchQuery] = useState("");
 
   const timeslots = [
     "09:00 AM", "10:30 AM", "11:15 AM", "02:00 PM", "03:30 PM", "04:15 PM"
   ];
 
-  // Filters mapping
+  // Filters mapping by status and doctor search query
   const filteredAppointments = appointments.filter((appt) => {
-    if (activeFilter === "All") return true;
-    if (activeFilter === "Pending") return appt.status === "PENDING";
-    if (activeFilter === "Confirmed") return appt.status === "CONFIRMED";
-    if (activeFilter === "Completed") return appt.status === "COMPLETED";
-    if (activeFilter === "Cancelled") return appt.status === "CANCELLED";
-    return true;
+    let statusMatch = true;
+    if (activeFilter === "Pending") statusMatch = appt.status === "PENDING";
+    else if (activeFilter === "Confirmed") statusMatch = appt.status === "CONFIRMED";
+    else if (activeFilter === "Completed") statusMatch = appt.status === "COMPLETED";
+    else if (activeFilter === "Cancelled") statusMatch = appt.status === "CANCELLED";
+
+    const doctorName = appt.doctor.user?.name || "";
+    const searchMatch = doctorName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return statusMatch && searchMatch;
   });
 
   const handleCancel = async (appointmentId: string) => {
@@ -154,21 +187,36 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
         </div>
       )}
 
-      {/* Tab Filter Navigation */}
-      <div className="flex gap-2 overflow-x-auto pb-2 border-b border-slate-200">
-        {["All", "Pending", "Confirmed", "Completed", "Cancelled"].map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setActiveFilter(filter)}
-            className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
-              activeFilter === filter
-                ? "border-[#0a5c5f] text-[#0a5c5f]"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            {filter === "All" ? "All Bookings" : filter}
-          </button>
-        ))}
+      {/* Search and Tab Filter Bar */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-2">
+        <div className="flex gap-2 overflow-x-auto scrollbar-none">
+          {["All", "Pending", "Confirmed", "Completed", "Cancelled"].map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setActiveFilter(filter)}
+              className={`px-4 py-2.5 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+                activeFilter === filter
+                  ? "border-[#0a5c5f] text-[#0a5c5f]"
+                  : "border-transparent text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {filter === "All" ? "All Bookings" : filter}
+            </button>
+          ))}
+        </div>
+
+        {/* Doctor Search Bar */}
+        <div className="relative w-full md:w-72 shrink-0">
+          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+          <Input
+            type="text"
+            placeholder="Search by doctor name..."
+            className="pl-10 h-11 border-slate-200 rounded-xl focus:border-[#0a5c5f] focus:ring-[#0a5c5f]/10 text-xs"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Appointments List Layout */}
@@ -274,7 +322,12 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                         disabled={isLoading}
                         onClick={() => {
                           setRescheduleTarget(appt);
-                          setRescheduleDate(appt.dateTime.split("T")[0]);
+                          const today = new Date();
+                          const tzOffset = today.getTimezoneOffset() * 60000;
+                          const todayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+                          const apptDateStr = appt.dateTime.split("T")[0];
+                          setRescheduleDate(apptDateStr >= todayStr ? apptDateStr : todayStr);
+                          setRescheduleTime("");
                         }}
                         className="flex-1 rounded-xl h-10 border-slate-200 text-slate-600 text-xs font-semibold bg-white hover:bg-slate-50"
                       >
@@ -304,15 +357,23 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                           <ChevronRight className="h-4 w-4" />
                         </Link>
                       </Button>
-                      {appt.prescription && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => setSelectedPrescriptionAppt(appt)}
-                          className="flex-1 bg-[#0a5c5f]/10 text-[#0a5c5f] hover:bg-[#0a5c5f]/20 font-bold text-xs h-10 rounded-xl border-none shadow-none"
-                        >
-                          View Prescription
-                        </Button>
-                      )}
+                      <Button 
+                        size="sm" 
+                        onClick={() => {
+                          if (appt.prescription) {
+                            setSelectedPrescriptionAppt(appt);
+                          } else {
+                            alert("No prescription was issued for this consultation.");
+                          }
+                        }}
+                        className={`flex-1 font-bold text-xs h-10 rounded-xl border-none shadow-none ${
+                          appt.prescription 
+                            ? "bg-[#0a5c5f]/10 text-[#0a5c5f] hover:bg-[#0a5c5f]/20" 
+                            : "bg-slate-100 text-slate-450 cursor-not-allowed"
+                        }`}
+                      >
+                        {appt.prescription ? "View Prescription" : "No Prescription"}
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -340,9 +401,17 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
                   <Input 
                     type="date" 
                     id="resched-date"
+                    min={(() => {
+                      const today = new Date();
+                      const tzOffset = today.getTimezoneOffset() * 60000;
+                      return new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+                    })()}
                     className="pl-10 h-11 border-slate-200 rounded-xl"
                     value={rescheduleDate}
-                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    onChange={(e) => {
+                      setRescheduleDate(e.target.value);
+                      setRescheduleTime(""); // reset timeslot when date changes
+                    }}
                   />
                 </div>
               </div>
@@ -351,20 +420,26 @@ export default function PatientAppointmentsClientPage({ appointments, patientId 
               <div className="space-y-2">
                 <Label className="text-xs font-bold text-slate-700">Select Available Timeslot</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {timeslots.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setRescheduleTime(slot)}
-                      className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
-                        rescheduleTime === slot
-                          ? "bg-[#0a5c5f] text-white border-transparent shadow-sm"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      }`}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                  {timeslots.map((slot) => {
+                    const isPassed = isTimeSlotPassed(rescheduleDate, slot);
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setRescheduleTime(slot)}
+                        className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                          rescheduleTime === slot
+                            ? "bg-[#0a5c5f] text-white border-transparent shadow-sm"
+                            : isPassed
+                            ? "bg-slate-100 text-slate-350 border-slate-100 cursor-not-allowed opacity-50"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        }`}
+                        disabled={isPassed}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

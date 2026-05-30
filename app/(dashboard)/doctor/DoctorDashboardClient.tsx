@@ -66,10 +66,35 @@ export default function DoctorDashboardClient({
 
   // States
   const [rescheduleTarget, setRescheduleTarget] = useState<any | null>(null);
-  const [rescheduleDate, setRescheduleDate] = useState("2026-05-28");
-  const [rescheduleTime, setRescheduleTime] = useState("09:00 AM");
+  const [rescheduleDate, setRescheduleDate] = useState(() => {
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    return new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+  });
+  const [rescheduleTime, setRescheduleTime] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
+
+  // Helper to check if a specific timeslot has already passed for a given date
+  const isTimeSlotPassed = (dateStr: string, slot: string) => {
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const todayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+    
+    if (dateStr > todayStr) return false;
+    if (dateStr < todayStr) return true;
+
+    // Parse slot time e.g., "09:00 AM", "02:00 PM"
+    const [time, modifier] = slot.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+    if (modifier === "PM" && hours < 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+
+    const slotTime = new Date(today);
+    slotTime.setHours(hours, minutes, 0, 0);
+
+    return slotTime.getTime() < today.getTime();
+  };
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -116,7 +141,12 @@ export default function DoctorDashboardClient({
 
   const handleRescheduleClick = (appt: any) => {
     setRescheduleTarget(appt);
-    setRescheduleDate(appt.dateTime.split("T")[0]);
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const todayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+    const apptDateStr = appt.dateTime.split("T")[0];
+    setRescheduleDate(apptDateStr >= todayStr ? apptDateStr : todayStr);
+    setRescheduleTime(""); // Reset selected slot
   };
 
   const handleRescheduleSubmit = async () => {
@@ -492,9 +522,17 @@ export default function DoctorDashboardClient({
                   <Input 
                     type="date" 
                     id="resched-date"
+                    min={(() => {
+                      const today = new Date();
+                      const tzOffset = today.getTimezoneOffset() * 60000;
+                      return new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+                    })()}
                     className="pl-10 h-11 border-slate-200 rounded-xl font-sans"
                     value={rescheduleDate}
-                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    onChange={(e) => {
+                      setRescheduleDate(e.target.value);
+                      setRescheduleTime(""); // reset timeslot when date changes
+                    }}
                   />
                 </div>
               </div>
@@ -503,20 +541,26 @@ export default function DoctorDashboardClient({
               <div className="space-y-2">
                 <Label className="text-xs font-bold text-slate-700">Select Available Timeslot</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {timeslots.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setRescheduleTime(slot)}
-                      className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
-                        rescheduleTime === slot
-                          ? "bg-[#0a5c5f] text-white border-transparent shadow-sm"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      }`}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                  {timeslots.map((slot) => {
+                    const isPassed = isTimeSlotPassed(rescheduleDate, slot);
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setRescheduleTime(slot)}
+                        className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                          rescheduleTime === slot
+                            ? "bg-[#0a5c5f] text-white border-transparent shadow-sm"
+                            : isPassed
+                            ? "bg-slate-100 text-slate-350 border-slate-100 cursor-not-allowed opacity-50"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        }`}
+                        disabled={isLoading || isPassed}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

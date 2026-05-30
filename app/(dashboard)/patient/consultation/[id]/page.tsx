@@ -15,13 +15,16 @@ import {
   Users, 
   FileText,
   BadgeAlert,
-  Loader2
+  Loader2,
+  CheckCircle2
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getAppointmentDetails } from "@/actions/appointments";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const getDoctorImage = (name: string) => {
   const lowercaseName = name.toLowerCase();
@@ -40,6 +43,22 @@ export default function PatientConsultationRoom() {
   const [isCamOff, setIsCamOff] = useState(false);
   const [pulseRate, setPulseRate] = useState(72);
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  const [appointment, setAppointment] = useState<any | null>(null);
+  const [isPrescriptionOpen, setIsPrescriptionOpen] = useState(false);
+
+  useEffect(() => {
+    async function loadAppointment() {
+      if (!appointmentId) return;
+      const res = await getAppointmentDetails(appointmentId);
+      if (res.success) {
+        setAppointment(res.appointment);
+      }
+    }
+    loadAppointment();
+    const interval = setInterval(loadAppointment, 5000);
+    return () => clearInterval(interval);
+  }, [appointmentId]);
 
   // Fluctuating simulated pulse rate
   useEffect(() => {
@@ -254,15 +273,35 @@ export default function PatientConsultationRoom() {
           <TabsContent value="session" className="flex-1 overflow-y-auto flex flex-col justify-between pr-1 outline-none">
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Notes</h3>
-              <div className="p-5 border border-white/5 bg-white/5 rounded-2xl text-center space-y-3">
-                <Loader2 className="h-6 w-6 text-teal-400 animate-spin mx-auto" />
-                <p className="text-xs text-slate-300 leading-relaxed font-light">
-                  Dr. Elena Santos is currently compile-writing your diagnosis notes and active prescriptions.
-                </p>
-                <p className="text-[10px] text-slate-400">
-                  These records will instantly sync to your dashboard timeline once the call concludes.
-                </p>
-              </div>
+              {appointment?.status === "COMPLETED" ? (
+                <div className="p-5 border border-emerald-500/20 bg-emerald-500/5 rounded-2xl text-center space-y-3">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-400 mx-auto" />
+                  <p className="text-xs text-slate-200 leading-relaxed font-bold">
+                    Consultation Concluded
+                  </p>
+                  <p className="text-xs text-slate-300 font-light leading-relaxed">
+                    Dr. {appointment.doctor.user.name} has finalized your consultation and issued your prescription.
+                  </p>
+                  {appointment.prescription && (
+                    <Button 
+                      onClick={() => setIsPrescriptionOpen(true)}
+                      className="bg-[#0a5c5f] hover:bg-[#084a4c] text-white text-xs font-bold w-full rounded-xl py-2 mt-2 border-none shadow-md"
+                    >
+                      View Prescription
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="p-5 border border-white/5 bg-white/5 rounded-2xl text-center space-y-3">
+                  <Loader2 className="h-6 w-6 text-teal-400 animate-spin mx-auto" />
+                  <p className="text-xs text-slate-300 leading-relaxed font-light">
+                    Dr. {appointment?.doctor?.user?.name || "Elena Santos"} is currently compile-writing your diagnosis notes and active prescriptions.
+                  </p>
+                  <p className="text-[10px] text-slate-400">
+                    These records will instantly sync to your dashboard timeline once the call concludes.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="p-4 border border-teal-500/20 bg-[#0a5c5f]/5 rounded-2xl flex items-start gap-2.5 mt-8">
@@ -278,6 +317,76 @@ export default function PatientConsultationRoom() {
         </Tabs>
 
       </div>
+
+      {/* View Prescription Dialog */}
+      <Dialog open={isPrescriptionOpen} onOpenChange={setIsPrescriptionOpen}>
+      {appointment && (
+        <DialogContent className="max-w-lg rounded-3xl p-6 bg-white border border-slate-100 font-sans text-slate-800">
+          <DialogHeader className="pb-3 border-b border-slate-100 text-center">
+            <div className="mx-auto bg-[#0a5c5f]/5 p-2 rounded-2xl w-fit mb-2">
+              <span className="text-[#0a5c5f] font-black tracking-widest text-lg">AGAPAY CLINICAL CARE</span>
+            </div>
+            <DialogTitle className="text-sm font-bold text-slate-500 uppercase tracking-widest">Electronic Prescription</DialogTitle>
+            <DialogDescription className="text-xs text-slate-400 font-light">Verified digital Rx prescription document</DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6 space-y-6">
+            {/* Doctor and License Info */}
+            <div className="flex justify-between items-start text-xs border-b border-slate-100 pb-4">
+              <div>
+                <h4 className="font-bold text-slate-800 text-sm">Dr. {appointment.doctor.user.name}</h4>
+                <p className="text-slate-500">{appointment.doctor.specialization} Specialist</p>
+                <p className="text-[10px] text-slate-400 mt-1">PRC License No: {appointment.doctor.licenseNumber || "N/A"}</p>
+              </div>
+              <div className="text-right text-slate-500">
+                <p className="font-semibold">Date Issued:</p>
+                <p className="text-slate-800 font-bold">{new Date(appointment.dateTime).toLocaleDateString("en-US", {
+                  month: "long", day: "numeric", year: "numeric"
+                })}</p>
+              </div>
+            </div>
+
+            {/* Rx prescription pad details */}
+            <div className="relative bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-4">
+              <span className="absolute top-2 left-4 text-slate-200 font-serif text-6xl select-none font-bold italic">Rx</span>
+              <div className="pt-6 pl-4 space-y-3 z-10 relative">
+                <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">Medication & Dosage Instructions</p>
+                <div className="text-sm text-slate-600 leading-relaxed font-mono bg-white border border-slate-100 p-4 rounded-xl shadow-sm whitespace-pre-line">
+                  {appointment.prescription}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer details / verification */}
+            <div className="text-center space-y-2 border-t border-slate-100 pt-4">
+              <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-full">
+                <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                <span>Electronically Signed & Secured</span>
+              </div>
+              <p className="text-[10px] text-slate-400 font-light">
+                This document serves as an official electronic prescription. If you require a printed copy for pharmacy presentation, please click print or take a screenshot.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsPrescriptionOpen(false)}
+              className="flex-1 rounded-xl h-11 border-slate-200"
+            >
+              Close
+            </Button>
+            <Button 
+              onClick={() => window.print()}
+              className="flex-1 bg-[#0a5c5f] hover:bg-[#084a4c] text-white rounded-xl h-11 font-semibold flex items-center justify-center gap-2"
+            >
+              Print Prescription
+            </Button>
+          </div>
+        </DialogContent>
+      )}
+    </Dialog>
     </div>
   );
 }

@@ -12,19 +12,13 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
+import DoctorCard, { getDoctorImage } from "@/components/doctors/DoctorCard";
 
 interface BrowseDoctorsClientPageProps {
   patientId: string;
 }
 
-// Fallback images matching our generated assets
-const getDoctorImage = (name: string) => {
-  const lowercaseName = name.toLowerCase();
-  if (lowercaseName.includes("santos")) return "/dr_elena_santos.png";
-  if (lowercaseName.includes("chen") || lowercaseName.includes("lim")) return "/dr_sofia_chen.png";
-  if (lowercaseName.includes("rivera") || lowercaseName.includes("marcus")) return "/dr_marco_rivera.png";
-  return "/dr_julian_reyes.png";
-};
+// Doctor details helper functions mapped to reusable components
 
 export default function BrowseDoctorsClientPage({ patientId }: BrowseDoctorsClientPageProps) {
   const router = useRouter();
@@ -46,8 +40,34 @@ export default function BrowseDoctorsClientPage({ patientId }: BrowseDoctorsClie
   
   // Booking Dialog state
   const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
-  const [bookingDate, setBookingDate] = useState("2026-05-28");
+  const [bookingDate, setBookingDate] = useState(() => {
+    // Default to today's date formatted as YYYY-MM-DD
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    return new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+  });
   const [bookingTime, setBookingTime] = useState("");
+
+  // Helper to check if a specific timeslot has already passed for a given date
+  const isTimeSlotPassed = (dateStr: string, slot: string) => {
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const todayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+    
+    if (dateStr > todayStr) return false;
+    if (dateStr < todayStr) return true;
+
+    // Parse slot time e.g., "09:00 AM", "02:00 PM"
+    const [time, modifier] = slot.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+    if (modifier === "PM" && hours < 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+
+    const slotTime = new Date(today);
+    slotTime.setHours(hours, minutes, 0, 0);
+
+    return slotTime.getTime() < today.getTime();
+  };
   const [bookingNotes, setBookingNotes] = useState("");
   const [isBookingLoading, setIsBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
@@ -186,14 +206,7 @@ export default function BrowseDoctorsClientPage({ patientId }: BrowseDoctorsClie
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((n) => (
-            <Card key={n} className="border-slate-100 rounded-2xl bg-white overflow-hidden shadow-sm animate-pulse">
-              <div className="bg-slate-200 h-48 w-full" />
-              <div className="p-5 space-y-3">
-                <div className="h-6 bg-slate-200 rounded w-2/3" />
-                <div className="h-4 bg-slate-200 rounded w-1/2" />
-                <div className="h-8 bg-slate-200 rounded w-full pt-4" />
-              </div>
-            </Card>
+            <DoctorCard key={n} isLoading={true} />
           ))}
         </div>
       ) : filteredDoctors.length === 0 ? (
@@ -208,71 +221,18 @@ export default function BrowseDoctorsClientPage({ patientId }: BrowseDoctorsClie
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDoctors.map((doctor) => {
-            const docImage = getDoctorImage(doctor.user?.name || "");
-            
-            return (
-              <Card key={doctor.id} className="border-slate-100 rounded-2xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col justify-between">
-                <div>
-                  {/* Card Banner Image */}
-                  <div className="relative h-48 bg-slate-100 overflow-hidden">
-                    <img
-                      src={docImage}
-                      alt={doctor.user?.name}
-                      className="object-cover w-full h-full object-center group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute left-4 top-4 bg-emerald-500 text-white text-[10px] font-bold uppercase px-2.5 py-1 rounded-full shadow-sm">
-                      Available Today
-                    </div>
-                    <div className="absolute right-4 top-4 bg-white/90 backdrop-blur-md text-slate-800 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <Star className="h-3.5 w-3.5 text-amber-500 fill-current" />
-                      <span>4.9</span>
-                    </div>
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-5 space-y-3">
-                    <div>
-                      <h3 className="font-extrabold text-slate-800 text-lg leading-tight group-hover:text-[#0a5c5f] transition-colors">
-                        Dr. {doctor.user?.name}
-                      </h3>
-                      <p className="text-xs text-slate-500 font-semibold mt-1">{doctor.specialization} Specialist</p>
-                    </div>
-
-                    <p className="text-slate-500 text-xs font-light line-clamp-2 leading-relaxed">
-                      {doctor.bio || `Specializing in ${doctor.specialization.toLowerCase()} with a patient-centric, empathetic healthcare framework.`}
-                    </p>
-
-                    <div className="flex gap-4 pt-2 border-t border-slate-100 text-xs text-slate-500 font-medium">
-                      <div className="flex items-center gap-1">
-                        <Coins className="h-4 w-4 text-[#0a5c5f]" />
-                        <span>₱{Number(doctor.consultFee).toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4 text-[#0a5c5f]" />
-                        <span>{doctor.experienceYears} Years Exp.</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 pt-0">
-                  <Button
-                    onClick={() => {
-                      setSelectedDoctor(doctor);
-                      setBookingTime("");
-                      setBookingError(null);
-                      setBookingSuccess(null);
-                    }}
-                    className="w-full bg-[#0a5c5f] hover:bg-[#084a4c] text-white flex items-center justify-center gap-1.5 rounded-xl h-11 font-semibold"
-                  >
-                    <span>Book Consultation</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
+          {filteredDoctors.map((doctor) => (
+            <DoctorCard
+              key={doctor.id}
+              doctor={doctor}
+              onBook={(doc) => {
+                setSelectedDoctor(doc);
+                setBookingTime("");
+                setBookingError(null);
+                setBookingSuccess(null);
+              }}
+            />
+          ))}
         </div>
       )}
 
@@ -419,9 +379,17 @@ export default function BrowseDoctorsClientPage({ patientId }: BrowseDoctorsClie
                   <Input
                     type="date"
                     id="date"
+                    min={(() => {
+                      const today = new Date();
+                      const tzOffset = today.getTimezoneOffset() * 60000;
+                      return new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+                    })()}
                     className="pl-10 h-11 border-slate-200 rounded-xl"
                     value={bookingDate}
-                    onChange={(e) => setBookingDate(e.target.value)}
+                    onChange={(e) => {
+                      setBookingDate(e.target.value);
+                      setBookingTime(""); // reset selected time slot when date changes
+                    }}
                     disabled={isBookingLoading}
                   />
                 </div>
@@ -431,21 +399,26 @@ export default function BrowseDoctorsClientPage({ patientId }: BrowseDoctorsClie
               <div className="space-y-2">
                 <Label className="text-xs font-bold text-slate-700">Select Available Timeslot</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {timeslots.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setBookingTime(slot)}
-                      className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
-                        bookingTime === slot
-                          ? "bg-[#0a5c5f] text-white border-transparent shadow-sm"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      }`}
-                      disabled={isBookingLoading}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                  {timeslots.map((slot) => {
+                    const isPassed = isTimeSlotPassed(bookingDate, slot);
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setBookingTime(slot)}
+                        className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                          bookingTime === slot
+                            ? "bg-[#0a5c5f] text-white border-transparent shadow-sm"
+                            : isPassed
+                            ? "bg-slate-100 text-slate-350 border-slate-100 cursor-not-allowed opacity-50"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        }`}
+                        disabled={isBookingLoading || isPassed}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

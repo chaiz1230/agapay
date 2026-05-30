@@ -11,6 +11,11 @@ export async function bookAppointment(data: {
   cost: number;
 }) {
   try {
+    // Backend validation: date/time must be in the future
+    const now = new Date();
+    if (new Date(data.dateTime).getTime() < now.getTime() - 60000) {
+      return { error: "Cannot book an appointment in the past." };
+    }
     const existing = await prisma.appointment.findFirst({
       where: {
         doctorId: data.doctorId,
@@ -164,6 +169,11 @@ export async function cancelAppointment(appointmentId: string) {
 
 export async function rescheduleAppointment(appointmentId: string, newDateTime: Date) {
   try {
+    // Backend validation: date/time must be in the future
+    const now = new Date();
+    if (new Date(newDateTime).getTime() < now.getTime() - 60000) {
+      return { error: "Cannot reschedule an appointment to a date/time in the past." };
+    }
     const appointment = await prisma.appointment.update({
       where: { id: appointmentId },
       data: {
@@ -283,5 +293,55 @@ export async function getMedicalRecords(patientId: string) {
     return { success: true, records };
   } catch (error: any) {
     return { error: error.message || "Failed to fetch medical records" };
+  }
+}
+
+export async function getAppointmentDetails(appointmentId: string) {
+  try {
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        doctor: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        patient: {
+          include: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!appointment) {
+      return { error: "Appointment not found" };
+    }
+
+    return {
+      success: true,
+      appointment: {
+        ...appointment,
+        cost: Number(appointment.cost),
+        dateTime: appointment.dateTime.toISOString(),
+        createdAt: appointment.createdAt.toISOString(),
+        updatedAt: appointment.updatedAt.toISOString(),
+        doctor: {
+          ...appointment.doctor,
+          consultFee: Number(appointment.doctor.consultFee),
+        }
+      },
+    };
+  } catch (error: any) {
+    return { error: error.message || "Failed to fetch appointment details" };
   }
 }

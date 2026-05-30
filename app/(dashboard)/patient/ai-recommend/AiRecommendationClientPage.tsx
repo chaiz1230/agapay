@@ -32,9 +32,34 @@ export default function AiRecommendationClientPage({ patientId }: AiRecommendati
   
   // Booking Dialog State
   const [selectedDoctor, setSelectedDoctor] = useState<any | null>(null);
-  const [bookingDate, setBookingDate] = useState("2026-05-28");
+  const [bookingDate, setBookingDate] = useState(() => {
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    return new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+  });
   const [bookingTime, setBookingTime] = useState("");
   const [bookingNotes, setBookingNotes] = useState("");
+
+  // Helper to check if a specific timeslot has already passed for a given date
+  const isTimeSlotPassed = (dateStr: string, slot: string) => {
+    const today = new Date();
+    const tzOffset = today.getTimezoneOffset() * 60000;
+    const todayStr = new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+    
+    if (dateStr > todayStr) return false;
+    if (dateStr < todayStr) return true;
+
+    // Parse slot time e.g., "09:00 AM", "02:00 PM"
+    const [time, modifier] = slot.split(" ");
+    let [hours, minutes] = time.split(":").map(Number);
+    if (modifier === "PM" && hours < 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+
+    const slotTime = new Date(today);
+    slotTime.setHours(hours, minutes, 0, 0);
+
+    return slotTime.getTime() < today.getTime();
+  };
   const [isBookingLoading, setIsBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
@@ -287,9 +312,17 @@ export default function AiRecommendationClientPage({ patientId }: AiRecommendati
                 <Input
                   type="date"
                   id="date"
+                  min={(() => {
+                    const today = new Date();
+                    const tzOffset = today.getTimezoneOffset() * 60000;
+                    return new Date(today.getTime() - tzOffset).toISOString().split("T")[0];
+                  })()}
                   className="h-11 border-slate-200 rounded-xl"
                   value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
+                  onChange={(e) => {
+                    setBookingDate(e.target.value);
+                    setBookingTime(""); // reset timeslot when date changes
+                  }}
                   disabled={isBookingLoading}
                 />
               </div>
@@ -297,21 +330,26 @@ export default function AiRecommendationClientPage({ patientId }: AiRecommendati
               <div className="space-y-2">
                 <Label className="text-xs font-bold text-slate-700">Select Available Timeslot</Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {timeslots.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setBookingTime(slot)}
-                      className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
-                        bookingTime === slot
-                          ? "bg-[#0a5c5f] text-white border-transparent shadow-sm"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      }`}
-                      disabled={isBookingLoading}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                  {timeslots.map((slot) => {
+                    const isPassed = isTimeSlotPassed(bookingDate, slot);
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setBookingTime(slot)}
+                        className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                          bookingTime === slot
+                            ? "bg-[#0a5c5f] text-white border-transparent shadow-sm"
+                            : isPassed
+                            ? "bg-slate-100 text-slate-350 border-slate-100 cursor-not-allowed opacity-50"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        }`}
+                        disabled={isBookingLoading || isPassed}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
